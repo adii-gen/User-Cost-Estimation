@@ -1,0 +1,22 @@
+// import { uploadRouter } from "@/server/uploadthing";
+// import { createRouteHandler } from "uploadthing/next";
+
+// export const { GET, POST } = createRouteHandler({
+//   router: uploadRouter,
+//   config: {
+//     logLevel: "Debug",
+//     // handleDaemonPromise: "await",
+//   },
+// });
+
+import { createRouteHandler } from "uploadthing/next";
+
+import { ourFileRouter } from "./core";
+
+// Export routes for Next App Router
+export const { GET, POST } = createRouteHandler({
+  router: ourFileRouter,
+
+  // Apply an (optional) custom config:
+  // config: { ... },
+});

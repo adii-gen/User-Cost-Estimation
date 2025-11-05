@@ -1,0 +1,199 @@
+enum user_role {
+  USER
+  ADMIN
+  SUPER_ADMIN
+  VENDOR
+}
+
+enum visibility {
+  public
+  private
+}
+
+table certifications {
+  certification_id uuid [pk, not null, default: `gen_random_uuid()`]
+  vendor_id uuid [not null]
+  certification_name varchar(200) [not null]
+  issuing_body varchar(200) [not null]
+  issue_date date [not null]
+  expiry_date date [not null]
+  certification_number varchar(100)
+  verification_url varchar(200)
+}
+
+table email_verification_tokens {
+  id uuid [pk, not null, default: `gen_random_uuid()`]
+  email text [not null]
+  token uuid [not null]
+  expires_at timestamp [not null]
+
+  indexes {
+    (email, token) [name: 'email_verification_tokens_email_token_key', unique]
+    token [name: 'email_verification_tokens_token_key', unique]
+  }
+}
+
+table password_reset_tokens {
+  id uuid [pk, not null, default: `gen_random_uuid()`]
+  email text [not null]
+  token uuid [not null]
+  expires_at timestamp [not null]
+
+  indexes {
+    (email, token) [name: 'password_reset_tokens_email_token_key', unique]
+    token [name: 'password_reset_tokens_token_key', unique]
+  }
+}
+
+table product_categories {
+  category_id uuid [pk, not null, default: `gen_random_uuid()`]
+  category_name varchar(100) [not null]
+  description text
+  is_active boolean [not null, default: true]
+}
+
+table products {
+  product_id uuid [pk, not null, default: `gen_random_uuid()`]
+  category_id uuid [not null]
+  product_name varchar(200) [not null]
+  description text
+  required_certifications text[]
+  is_active boolean [not null, default: true]
+}
+
+table references {
+  reference_id uuid [pk, not null, default: `gen_random_uuid()`]
+  vendor_id uuid [not null]
+  client_company_name varchar(200) [not null]
+  client_industry varchar(100) [not null]
+  project_description text
+  service_period_start date [not null]
+  service_period_end date [not null]
+  contact_person_name varchar(100) [not null]
+  contact_email varchar(100) [not null]
+  is_public boolean [not null, default: false]
+}
+
+table service_categories {
+  category_id uuid [pk, not null, default: `gen_random_uuid()`]
+  category_name varchar(100) [not null]
+  description text
+  is_active boolean [not null, default: true]
+}
+
+table services {
+  service_id uuid [pk, not null, default: `gen_random_uuid()`]
+  category_id uuid [not null]
+  service_name varchar(200) [not null]
+  description text
+  required_certifications text[]
+  is_active boolean [not null, default: true]
+}
+
+table users {
+  id uuid [pk, not null, default: `gen_random_uuid()`]
+  name varchar(255) [not null]
+  email varchar(255) [not null]
+  email_verified timestamp
+  email_verif_token varchar(255)
+  password varchar(255) [not null]
+  mobile text
+  role user_role [not null, default: 'USER']
+  vendor_profile_id uuid
+  profile_pic text
+  cover_pic text
+  secure_profile_pic text
+  created_by uuid
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null]
+
+  indexes {
+    email [name: 'users_email_key', unique]
+    (name, email, mobile) [name: 'users_name_email_mobile_idx']
+  }
+}
+
+table vendor_products {
+  vendor_product_id uuid [pk, not null, default: `gen_random_uuid()`]
+  vendor_id uuid [not null]
+  product_id uuid [not null]
+  experience_years integer
+  photo text[]
+  description text
+  specifications text
+  stock integer
+  pricing_model varchar(50)
+  price "numeric(10, 2)"
+  currency varchar(3)
+  is_currently_offered boolean [not null, default: true]
+
+  indexes {
+    (vendor_id, product_id) [name: 'vendor_product_unique_idx', unique]
+  }
+}
+
+table vendor_profiles {
+  vendor_id uuid [pk, not null, default: `gen_random_uuid()`]
+  company_name varchar(200) [not null]
+  legal_entity_type varchar(50)
+  tax_id varchar(50)
+  establishment_year integer
+  social_links json
+  logo text
+  cover_image text
+  pictures json
+  primary_contact_name varchar(100)
+  primary_contact_email varchar(100)
+  primary_contact_phone varchar(20)
+  whatsapp_number varchar(20)
+  headquarters_address text
+  state text
+  city text
+  pincode text
+  operating_countries text[]
+  employee_count_range varchar(50)
+  annual_revenue_range varchar(50)
+  regulatory_licenses text[]
+  insurance_coverage json
+  business_opening_days text[]
+  business_timing json
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+}
+
+table vendor_services {
+  vendor_service_id uuid [pk, not null, default: `gen_random_uuid()`]
+  vendor_id uuid [not null]
+  service_id uuid [not null]
+  experience_years integer
+  photo text[]
+  mode_of_service varchar(50)
+  description varchar(500)
+  pricing_model varchar(50)
+  price "numeric(10, 2)"
+  location varchar(150)
+  currency varchar(3)
+  is_currently_offered boolean [not null, default: true]
+
+  indexes {
+    (vendor_id, service_id) [name: 'vendor_service_unique_idx', unique]
+  }
+}
+
+ref certifications_vendor_id_vendor_profiles_vendor_id_fk: certifications.vendor_id > vendor_profiles.vendor_id [delete: no action, update: no action]
+
+ref products_category_id_product_categories_category_id_fk: products.category_id > product_categories.category_id [delete: no action, update: no action]
+
+ref references_vendor_id_vendor_profiles_vendor_id_fk: references.vendor_id > vendor_profiles.vendor_id [delete: no action, update: no action]
+
+ref services_category_id_service_categories_category_id_fk: services.category_id > service_categories.category_id [delete: no action, update: no action]
+
+ref users_vendor_profile_id_vendor_profiles_vendor_id_fk: users.vendor_profile_id > vendor_profiles.vendor_id [delete: no action, update: no action]
+
+ref vendor_products_vendor_id_vendor_profiles_vendor_id_fk: vendor_products.vendor_id > vendor_profiles.vendor_id [delete: no action, update: no action]
+
+ref vendor_products_product_id_products_product_id_fk: vendor_products.product_id > products.product_id [delete: no action, update: no action]
+
+ref vendor_services_vendor_id_vendor_profiles_vendor_id_fk: vendor_services.vendor_id > vendor_profiles.vendor_id [delete: no action, update: no action]
+
+ref vendor_services_service_id_services_service_id_fk: vendor_services.service_id > services.service_id [delete: no action, update: no action]

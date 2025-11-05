@@ -1,0 +1,63 @@
+<div className="bg-white p-3 rounded-lg shadow-md mb-6">
+          <form onSubmit={handleSubmit}>
+            <div className="flex flex-col sm:flex-row items-center gap-3 flex-wrap">
+              <div className="w-full sm:w-auto">
+                <Select
+                  value={selectedDealType}
+                  onValueChange={handleDealTypeSelect}
+                >
+                  <SelectTrigger className="border-primary w-full sm:w-40 md:w-48">
+                    <SelectValue placeholder="Select Deal Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {dealTypes.map((dealType) => (
+                      <SelectItem key={dealType.id} value={dealType.id}>
+                        <div className="flex items-center">
+                          <span className="mr-2">
+                            {dealType.name.toLowerCase().includes("flight")
+                              ? icons[0]
+                              : ""}
+                            {dealType.name.toLowerCase().includes("hotel")
+                              ? icons[1]
+                              : ""}
+                            {dealType.name.toLowerCase().includes("deal")
+                              ? icons[2]
+                              : ""}
+                            {dealType.name.toLowerCase().includes("package")
+                              ? icons[3]
+                              : ""}
+                          </span>
+                          {dealType.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {}
+              {selectedDealType && metadataSchema && (
+                <div className="flex-1 flex flex-wrap gap-3">
+                  {renderMetadataFields()}
+                </div>
+              )}
+              {}
+              <Button
+                type="submit"
+                className="bg-primary hover:bg-primary/90 text-white w-full sm:w-auto"
+                disabled={isSearching}
+              >
+                {isSearching ? (
+                  <span className="flex items-center">
+                    <Loader2 className="animate-spin h-4 w-4 mr-2" />
+                    Searching...
+                  </span>
+                ) : (
+                  <span className="flex items-center">
+                    <Search className="h-4 w-4 mr-2" />
+                    Search
+                  </span>
+                )}
+              </Button>
+            </div>
+          </form>
+        </div>
