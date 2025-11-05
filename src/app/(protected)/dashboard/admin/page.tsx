@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Plus, ChevronRight, Calendar, X, Loader2, CheckCircle2, Clock } from 'lucide-react';
+import { Plus, ChevronRight, Calendar, X, Loader2, CheckCircle2, Clock, Edit2, Trash2, TrendingUp, TrendingDown } from 'lucide-react';
 
 // ==================== TYPES ====================
 interface Project {
@@ -15,23 +15,42 @@ interface Project {
 }
 
 interface Task {
-  id: string;
-  projectId: string;
-  employeeId: string;
+  taskId: string;
   taskName: string;
   description: string | null;
   expectedHours: string;
   actualHours: string;
   status: 'pending' | 'approved' | 'rejected';
-  approvedBy: string | null;
   approvedAt: string | null;
-  rejectionReason: string | null;
   createdAt: string;
-  updatedAt: string;
-  employee?: {
-    name: string;
-    email: string;
+  employeeId: string;
+  employeeName: string;
+  employeeEmail: string;
+}
+
+interface EmployeeSummary {
+  employeeId: string;
+  employeeName: string;
+  employeeEmail: string;
+  totalTasks: number;
+  totalExpectedHours: number;
+  totalActualHours: number;
+  pendingTasks: number;
+  approvedTasks: number;
+  rejectedTasks: number;
+}
+
+interface ProjectDetails {
+  project: Project;
+  tasks: Task[];
+  summary: {
+    totalTasks: number;
+    totalExpectedHours: string;
+    totalActualHours: string;
+    variance: string;
+    variancePercentage: string;
   };
+  employees: EmployeeSummary[];
 }
 
 interface FormData {
@@ -214,40 +233,106 @@ const AddProjectModal: React.FC<{
   );
 };
 
+// ==================== DELETE CONFIRMATION MODAL ====================
+const DeleteConfirmModal: React.FC<{
+  isOpen: boolean;
+  projectName: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+  isDeleting: boolean;
+}> = ({ isOpen, projectName, onConfirm, onCancel, isDeleting }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+        <div className="p-6">
+          <h3 className="text-xl font-bold text-gray-900 mb-4">Delete Project</h3>
+          <p className="text-gray-600 mb-6">
+            Are you sure you want to delete <span className="font-semibold">{projectName}</span>? This action will soft delete the project.
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={onCancel}
+              disabled={isDeleting}
+              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 font-medium"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={onConfirm}
+              disabled={isDeleting}
+              className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 font-medium flex items-center justify-center gap-2"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ==================== PROJECT CARD ====================
 const ProjectCard: React.FC<{
   project: Project;
   onClick: () => void;
-}> = ({ project, onClick }) => (
-  <div
-    onClick={onClick}
-    className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-all cursor-pointer hover:border-blue-400"
-  >
+  onDelete: () => void;
+  isAdmin: boolean;
+}> = ({ project, onClick, onDelete, isAdmin }) => (
+  <div className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-all group">
     <div className="flex justify-between items-start mb-3">
-      <h3 className="text-xl font-semibold text-gray-900">{project.projectName}</h3>
-      <ChevronRight className="text-gray-400 w-5 h-5 flex-shrink-0" />
+      <div onClick={onClick} className="flex-1 cursor-pointer">
+        <h3 className="text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+          {project.projectName}
+        </h3>
+      </div>
+      <div className="flex items-center gap-2">
+        {isAdmin && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            className="text-red-500 hover:text-red-700 transition-colors p-1"
+            title="Delete project"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        )}
+        <ChevronRight className="text-gray-400 w-5 h-5 flex-shrink-0" />
+      </div>
     </div>
-    <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-      {project.description || 'No description provided'}
-    </p>
-    <div className="flex items-center justify-between text-sm">
-      <span className="flex items-center gap-1 text-gray-500">
-        <Calendar className="w-4 h-4" />
-        {new Date(project.createdAt).toLocaleDateString('en-IN')}
-      </span>
+    <div onClick={onClick} className="cursor-pointer">
+      <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+        {project.description || 'No description provided'}
+      </p>
+      <div className="flex items-center justify-between text-sm">
+        <span className="flex items-center gap-1 text-gray-500">
+          <Calendar className="w-4 h-4" />
+          {new Date(project.createdAt).toLocaleDateString('en-IN')}
+        </span>
+      </div>
     </div>
   </div>
 );
 
-// ==================== PROJECT DETAIL TABLE ====================
-const ProjectDetailTable: React.FC<{
-  project: Project;
-  tasks: Task[];
+// ==================== PROJECT DETAIL VIEW ====================
+const ProjectDetailView: React.FC<{
+  projectDetails: ProjectDetails;
   onBack: () => void;
   isLoading: boolean;
-}> = ({ project, tasks, onBack, isLoading }) => {
-  const totalExpectedHours = tasks.reduce((sum, t) => sum + parseFloat(t.expectedHours), 0);
-  const totalActualHours = tasks.reduce((sum, t) => sum + parseFloat(t.actualHours), 0);
+}> = ({ projectDetails, onBack, isLoading }) => {
+  const { project, tasks, summary, employees } = projectDetails;
+  const varianceNum = parseFloat(summary.variance);
+  const isOverBudget = varianceNum > 0;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -267,53 +352,131 @@ const ProjectDetailTable: React.FC<{
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-      <div className="p-6 border-b border-gray-200">
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <button
           onClick={onBack}
           className="text-blue-600 hover:text-blue-700 font-medium mb-4 flex items-center gap-2"
         >
           ← Back to Projects
         </button>
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-start">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">{project.projectName}</h2>
             <p className="text-gray-500 mt-1">{project.description || 'No description'}</p>
           </div>
-          <div className="text-right">
-            <p className="text-sm text-gray-500">Total Hours</p>
-            <p className="text-3xl font-bold text-blue-600">{totalActualHours.toFixed(1)}</p>
-            <p className="text-xs text-gray-400">Expected: {totalExpectedHours.toFixed(1)}h</p>
-          </div>
         </div>
       </div>
 
-      {isLoading ? (
-        <div className="flex items-center justify-center py-16">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white p-6 rounded-lg border border-gray-200">
+          <p className="text-sm text-gray-500 mb-1">Total Tasks</p>
+          <p className="text-3xl font-bold text-gray-900">{summary.totalTasks}</p>
         </div>
-      ) : (
+        <div className="bg-white p-6 rounded-lg border border-gray-200">
+          <p className="text-sm text-gray-500 mb-1">Expected Hours</p>
+          <p className="text-3xl font-bold text-blue-600">{parseFloat(summary.totalExpectedHours).toFixed(1)}</p>
+        </div>
+        <div className="bg-white p-6 rounded-lg border border-gray-200">
+          <p className="text-sm text-gray-500 mb-1">Actual Hours</p>
+          <p className="text-3xl font-bold text-purple-600">{parseFloat(summary.totalActualHours).toFixed(1)}</p>
+        </div>
+        <div className="bg-white p-6 rounded-lg border border-gray-200">
+          <p className="text-sm text-gray-500 mb-1">Variance</p>
+          <div className="flex items-center gap-2">
+            <p className={`text-3xl font-bold ${isOverBudget ? 'text-red-600' : 'text-green-600'}`}>
+              {isOverBudget ? '+' : ''}{parseFloat(summary.variance).toFixed(1)}
+            </p>
+            {isOverBudget ? <TrendingUp className="w-5 h-5 text-red-600" /> : <TrendingDown className="w-5 h-5 text-green-600" />}
+          </div>
+          <p className={`text-xs mt-1 ${isOverBudget ? 'text-red-600' : 'text-green-600'}`}>
+            {summary.variancePercentage}%
+          </p>
+        </div>
+      </div>
+
+      {/* Employee Summary */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div className="p-6 border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900">Employee Summary</h3>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Employee</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Task</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Description</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Expected</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actual</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Date</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Employee</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Total Tasks</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Expected</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Actual</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Approved</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Pending</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Rejected</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {employees.map((emp) => (
+                <tr key={emp.employeeId} className="hover:bg-gray-50">
+                  <td className="px-6 py-4">
+                    <div>
+                      <p className="font-medium text-gray-900">{emp.employeeName}</p>
+                      <p className="text-sm text-gray-500">{emp.employeeEmail}</p>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 font-semibold text-gray-900">{emp.totalTasks}</td>
+                  <td className="px-6 py-4 font-semibold text-gray-900">{emp.totalExpectedHours.toFixed(1)}h</td>
+                  <td className="px-6 py-4 font-semibold text-gray-900">{emp.totalActualHours.toFixed(1)}h</td>
+                  <td className="px-6 py-4">
+                    <span className="text-green-600 font-semibold">{emp.approvedTasks}</span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="text-yellow-600 font-semibold">{emp.pendingTasks}</span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="text-red-600 font-semibold">{emp.rejectedTasks}</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Task Details */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div className="p-6 border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900">All Tasks</h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Employee</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Task</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Description</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Expected</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Actual</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Date</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {tasks.map((task) => (
-                <tr key={task.id} className="hover:bg-gray-50 transition-colors">
+                <tr key={task.taskId} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <div>
-                      <p className="font-medium text-gray-900">{task.employee?.name || 'Unknown'}</p>
-                      <p className="text-sm text-gray-500">{task.employee?.email || 'N/A'}</p>
+                      <p className="font-medium text-gray-900">{task.employeeName}</p>
+                      <p className="text-sm text-gray-500">{task.employeeEmail}</p>
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -322,11 +485,11 @@ const ProjectDetailTable: React.FC<{
                   <td className="px-6 py-4 max-w-md">
                     <p className="text-sm text-gray-700">{task.description || 'No description'}</p>
                   </td>
-                  <td className="px-6 py-4">
-                    <p className="font-semibold text-gray-900">{parseFloat(task.expectedHours).toFixed(1)}h</p>
+                  <td className="px-6 py-4 font-semibold text-gray-900">
+                    {parseFloat(task.expectedHours).toFixed(1)}h
                   </td>
-                  <td className="px-6 py-4">
-                    <p className="font-semibold text-gray-900">{parseFloat(task.actualHours).toFixed(1)}h</p>
+                  <td className="px-6 py-4 font-semibold text-gray-900">
+                    {parseFloat(task.actualHours).toFixed(1)}h
                   </td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(task.status)}`}>
@@ -345,14 +508,13 @@ const ProjectDetailTable: React.FC<{
               ))}
             </tbody>
           </table>
-
           {tasks.length === 0 && (
             <div className="text-center py-12">
               <p className="text-gray-500">No tasks yet for this project.</p>
             </div>
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 };
@@ -360,11 +522,14 @@ const ProjectDetailTable: React.FC<{
 // ==================== MAIN DASHBOARD ====================
 export default function AdminDashboard() {
   const [projects, setProjects] = useState<Project[]>([]);
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [projectDetails, setProjectDetails] = useState<ProjectDetails | null>(null);
   const [showAddProject, setShowAddProject] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingTasks, setIsLoadingTasks] = useState(false);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
 
@@ -402,50 +567,79 @@ export default function AdminDashboard() {
     }
   };
 
-  const fetchTasks = async (projectId: string) => {
-    setIsLoadingTasks(true);
+  const fetchProjectDetails = async (projectId: string) => {
+    setIsLoadingDetails(true);
     try {
-      const response = await fetch(`/api/projects/${projectId}/tasks`);
+      const response = await fetch(`/api/projects/${projectId}`);
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch tasks');
+        throw new Error(data.error || 'Failed to fetch project details');
       }
 
-      setTasks(data.tasks || []);
+      setProjectDetails(data);
     } catch (err) {
-      console.error('Error fetching tasks:', err);
-      setTasks([]);
+      console.error('Error fetching project details:', err);
+      setProjectDetails(null);
     } finally {
-      setIsLoadingTasks(false);
+      setIsLoadingDetails(false);
     }
   };
 
   const handleProjectClick = (project: Project) => {
-    setSelectedProject(project);
-    fetchTasks(project.id);
+    setSelectedProjectId(project.id);
+    fetchProjectDetails(project.id);
   };
 
   const handleBack = () => {
-    setSelectedProject(null);
-    setTasks([]);
+    setSelectedProjectId(null);
+    setProjectDetails(null);
   };
 
   const handleProjectCreated = () => {
     fetchProjects();
   };
 
+  const handleDeleteClick = (project: Project) => {
+    setProjectToDelete(project);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!projectToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/projects/${projectToDelete.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to delete project');
+      }
+
+      setShowDeleteModal(false);
+      setProjectToDelete(null);
+      fetchProjects();
+    } catch (err) {
+      console.error('Error deleting project:', err);
+      alert(err instanceof Error ? err.message : 'Failed to delete project');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const isAdmin = userRole === 'platform_admin';
 
-  if (selectedProject) {
+  if (selectedProjectId && projectDetails) {
     return (
       <div className="min-h-screen bg-gray-50 p-8">
         <div className="max-w-7xl mx-auto">
-          <ProjectDetailTable
-            project={selectedProject}
-            tasks={tasks}
+          <ProjectDetailView
+            projectDetails={projectDetails}
             onBack={handleBack}
-            isLoading={isLoadingTasks}
+            isLoading={isLoadingDetails}
           />
         </div>
       </div>
@@ -492,6 +686,8 @@ export default function AdminDashboard() {
                 key={project.id}
                 project={project}
                 onClick={() => handleProjectClick(project)}
+                onDelete={() => handleDeleteClick(project)}
+                isAdmin={isAdmin}
               />
             ))}
           </div>
@@ -511,6 +707,17 @@ export default function AdminDashboard() {
           isOpen={showAddProject}
           onClose={() => setShowAddProject(false)}
           onSuccess={handleProjectCreated}
+        />
+
+        <DeleteConfirmModal
+          isOpen={showDeleteModal}
+          projectName={projectToDelete?.projectName || ''}
+          onConfirm={handleDeleteConfirm}
+          onCancel={() => {
+            setShowDeleteModal(false);
+            setProjectToDelete(null);
+          }}
+          isDeleting={isDeleting}
         />
       </div>
     </div>
