@@ -388,15 +388,53 @@ const handleCancelEdit = () => {
   setEditedActualHours('');
 };
 
+// const handleSaveEdit = async (taskId: string) => {
+//   setIsSaving(true);
+//   try {
+//     const response = await fetch(`/api/tasks/${taskId}`, {
+//       method: 'PUT',
+//       headers: { 'Content-Type': 'application/json' },
+//       body: JSON.stringify({
+//         taskName: editedTaskName.trim(),
+//         actualHours: parseFloat(editedActualHours),
+//       }),
+//     });
+
+//     if (!response.ok) {
+//       const data = await response.json();
+//       throw new Error(data.error || 'Failed to update task');
+//     }
+
+//     // Refresh the project details after successful update
+//     window.location.reload();
+//   } catch (error) {
+//     console.error('Error updating task:', error);
+//     alert(error instanceof Error ? error.message : 'Failed to update task');
+//   } finally {
+//     setIsSaving(false);
+//   }
+// };
 const handleSaveEdit = async (taskId: string) => {
+  // Validate inputs
+  if (!editedTaskName.trim()) {
+    alert('Task name cannot be empty');
+    return;
+  }
+
+  const actualHoursNum = parseFloat(editedActualHours);
+  if (isNaN(actualHoursNum) || actualHoursNum < 0) {
+    alert('Actual hours must be a valid positive number');
+    return;
+  }
+
   setIsSaving(true);
   try {
-    const response = await fetch(`/api/tasks/${taskId}`, {
-      method: 'PATCH',
+    const response = await fetch(`/api/task/${taskId}`, {
+      method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         taskName: editedTaskName.trim(),
-        actualHours: parseFloat(editedActualHours),
+        actualHours: actualHoursNum,
       }),
     });
 
@@ -405,16 +443,23 @@ const handleSaveEdit = async (taskId: string) => {
       throw new Error(data.error || 'Failed to update task');
     }
 
-    // Refresh the project details after successful update
-    window.location.reload();
+    // Reset editing state
+    setEditingTaskId(null);
+    setEditedTaskName('');
+    setEditedActualHours('');
+
+    // Refresh project details by refetching
+    // if (selectedProjectId) {
+    //   await fetchProjectDetails(selectedProjectId);
+    // }
   } catch (error) {
     console.error('Error updating task:', error);
     alert(error instanceof Error ? error.message : 'Failed to update task');
   } finally {
     setIsSaving(false);
   }
-};
-  const varianceNum = parseFloat(summary.variance);
+};  
+const varianceNum = parseFloat(summary.variance);
   const isOverBudget = varianceNum > 0;
   const getStatusColor = (status: string) => {
     switch (status) {
