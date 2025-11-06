@@ -53,14 +53,24 @@ export async function POST(req: Request) {
       );
     }
 
-    const [project] = await db
-      .insert(Projects)
-      .values({
-        projectName,
-        description,
-        createdBy: session.user.id,
-      })
-      .returning();
+    // const [project] = await db
+    //   .insert(Projects)
+    //   .values({
+    //     projectName,
+    //     description,
+    //     createdBy: session.user.id,
+    //   })
+    //   .returning();
+
+      const [project] = await db
+        .insert(Projects)
+        .values({
+          projectName,
+          description: description ?? null,
+          createdBy: session.user.id!,
+        })
+        .returning();
+
 
     return NextResponse.json({ project }, { status: 201 });
   } catch (error) {

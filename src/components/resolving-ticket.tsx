@@ -634,7 +634,6 @@
 'use client';
 
 import { useCurrentUser } from '@/hooks/auth';
-import { UploadButton } from '@/utils/uploadthing';
 import { Paperclip, X } from 'lucide-react';
 import Image from 'next/image';
 import React, { useState, useEffect, useRef } from 'react';

@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     // Insert new task into DB
     const [newTask] = await db.insert(Tasks).values({
       projectId,
-      employeeId: session.user.id, // assigning task to logged-in user
+      employeeId: session.user.id!, // assigning task to logged-in user
       taskName,
       description: description || null,
       expectedHours,

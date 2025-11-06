@@ -9,15 +9,15 @@ import { Poppins } from "next/font/google";
 export const metadata: Metadata = {
 
 
-  title: "TMS",
-  description: "We're here to Increase your Productivity",
+  title: "User Cost Estimation & Task Management",
+  description: "A comprehensive platform for estimating user costs and managing tasks efficiently.",
   generator: "next.js",
   manifest: "/manifest.json",
   keywords: ["nextjs", "next14", "pwa", "next-pwa"],
   themeColor: [{ media: "(prefers-color-scheme: dark)", color: "#fff" }],
   authors: [
     {
-      name: "Ashutosh Mishra",
+      name: "GenNext",
       url: "https://github.com/ashutoshmishra",
     }
   ],
