@@ -340,6 +340,8 @@ const ProjectDetailView: React.FC<{
 const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
 const [editedTaskName, setEditedTaskName] = useState('');
 const [editedActualHours, setEditedActualHours] = useState('');
+const [editedStatus, setEditedStatus] = useState<'pending' | 'approved' | 'rejected'>('pending');
+
 const [isSaving, setIsSaving] = useState(false);
 
   // Add search states
@@ -429,12 +431,13 @@ const handleSaveEdit = async (taskId: string) => {
 
   setIsSaving(true);
   try {
-    const response = await fetch(`/api/task/${taskId}`, {
+    const response = await fetch(`/api/tasks/${taskId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         taskName: editedTaskName.trim(),
         actualHours: actualHoursNum,
+        
       }),
     });
 
