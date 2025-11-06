@@ -1,7 +1,6 @@
 "use client";
 import { useState } from "react";
-import { useSession } from "next-auth/react";
-import { signOut } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 
 const Navigation = () => {
@@ -11,23 +10,25 @@ const Navigation = () => {
   const isAuthenticated = status === "authenticated";
   const isLoading = status === "loading";
   const user = session?.user;
-  console.log("data", user);
+
   const handleLogout = async () => {
     await signOut({ redirectTo: "/auth/login" });
   };
 
   return (
     <div className="min-w-full">
-      <nav className="flex items-center justify-between p-4 bg-white shadow-md">
-        {/* Logo Section */}
-        <div className="flex items-center space-x-2">
-          <Link href="/">
-            <img src="/logo.png" alt="The Muse Logo" className="h-10" />
-          </Link>
-        </div>
-
+<nav className="flex items-center justify-between px-6 py-4 bg-white shadow-md">        {/* Logo Section */}
+   <div className="flex items-center ml-6 lg:ml-20">
+  <Link href="/">
+    <img
+      src="https://www.gennextit.com/assets/Frontend/logo/Gennextlogoxdarkblue.png"
+      alt="gennext_logo"
+      className="h-10"
+    />
+  </Link>
+</div>
         {/* Desktop Menu */}
-        <div className="hidden md:flex items-center space-x-6 px-20">
+         <div className="hidden md:flex items-center space-x-6 px-20">
           {!isAuthenticated ? (
             <>
               <Link href="/auth/register">
@@ -134,7 +135,13 @@ const Navigation = () => {
             </>
           ) : (
             <>
-              <p className="text-primary px-4">{session?.user?.name}</p>
+              {user?.image && (
+                <img
+                  src={user.image}
+                  alt="User avatar"
+                  className="w-10 h-10 rounded-full object-cover border border-primary mx-4"
+                />
+              )}
               <Link href="/dashboard">
                 <button className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-primary-light">
                   Dashboard

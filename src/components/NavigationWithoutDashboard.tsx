@@ -108,6 +108,7 @@ export default function NavBarWithoutDasboard() {
   const toggleShowAll = () => {
     setShowAll(!showAll);
   };
+  if (profile) return null;
 
   return (
     <div className="min-w-full z-50">
