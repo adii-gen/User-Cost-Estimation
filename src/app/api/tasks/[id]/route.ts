@@ -60,6 +60,70 @@ export async function GET(
 }
 
 // PUT - Update task
+// export async function PUT(
+//   req: Request,
+//   { params }: { params: { id: string } }
+// ) {
+//   try {
+//     const session = await auth();
+//     if (!session?.user) {
+//       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+//     }
+
+//     const body = await req.json();
+//     const { taskName, description, expectedHours, actualHours } = body;
+
+//     // Check if task exists and belongs to user
+//     const [existingTask] = await db
+//       .select()
+//       .from(Tasks)
+//       .where(eq(Tasks.id, params.id))
+//       .limit(1);
+
+//     if (!existingTask) {
+//       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+//     }
+
+//     // Only employee who created task can edit (if not approved yet)
+//     if (
+//       existingTask.employeeId !== session.user.id &&
+//       session.user.role !== 'platform_admin'
+//     ) {
+//       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+//     }
+
+//     // Cannot edit approved tasks (unless admin)
+//     if (
+//       existingTask.status !== 'pending' &&
+//       session.user.role !== 'platform_admin'
+//     ) {
+//       return NextResponse.json(
+//         { error: 'Cannot edit approved/rejected tasks' },
+//         { status: 403 }
+//       );
+//     }
+
+//     const [task] = await db
+//       .update(Tasks)
+//       .set({
+//         taskName,
+//         description,
+//         expectedHours: expectedHours?.toString(),
+//         actualHours: actualHours?.toString(),
+//         updatedAt: new Date(),
+//       })
+//       .where(eq(Tasks.id, params.id))
+//       .returning();
+
+//     return NextResponse.json({ task }, { status: 200 });
+//   } catch (error) {
+//     console.error('Error updating task:', error);
+//     return NextResponse.json(
+//       { error: 'Failed to update task' },
+//       { status: 500 }
+//     );
+//   }
+// }
 export async function PUT(
   req: Request,
   { params }: { params: { id: string } }
@@ -72,6 +136,15 @@ export async function PUT(
 
     const body = await req.json();
     const { taskName, description, expectedHours, actualHours } = body;
+
+    // Validate required fields
+    if (!taskName?.trim()) {
+      return NextResponse.json({ error: 'Task name is required' }, { status: 400 });
+    }
+
+    if (actualHours !== undefined && (isNaN(parseFloat(actualHours)) || parseFloat(actualHours) < 0)) {
+      return NextResponse.json({ error: 'Actual hours must be a positive number' }, { status: 400 });
+    }
 
     // Check if task exists and belongs to user
     const [existingTask] = await db
@@ -106,8 +179,8 @@ export async function PUT(
     const [task] = await db
       .update(Tasks)
       .set({
-        taskName,
-        description,
+        taskName: taskName.trim(),
+        description: description?.trim() || null,
         expectedHours: expectedHours?.toString(),
         actualHours: actualHours?.toString(),
         updatedAt: new Date(),
@@ -124,7 +197,6 @@ export async function PUT(
     );
   }
 }
-
 // DELETE task
 export async function DELETE(
   req: Request,
