@@ -367,7 +367,7 @@ export async function PUT(
     // Prepare update object
     const updateData: any = {
       taskName: taskName.trim(),
-      description: description?.trim() || null,
+      description: description?.trim() ,
       expectedHours: expectedHours?.toString(),
       updatedAt: new Date(),
     };
