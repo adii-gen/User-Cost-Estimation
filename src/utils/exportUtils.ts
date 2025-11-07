@@ -1,427 +1,341 @@
-// // utils/exportUtils.ts
-// export const downloadCSV = (data: any[], filename: string) => {
-//   if (!data.length) {
-//     console.warn('No data to export');
-//     return;
-//   }
+import * as XLSX from 'xlsx-js-style';
 
-//   try {
-//     const headers = Object.keys(data[0]);
-    
-//     // Create CSV content with proper escaping
-//     const csvContent = [
-//       headers.join(','),
-//       ...data.map(row => 
-//         headers.map(header => {
-//           const value = row[header] === null || row[header] === undefined ? '' : row[header];
-//           // Escape quotes and wrap in quotes
-//           const escapedValue = String(value).replace(/"/g, '""');
-//           return `"${escapedValue}"`;
-//         }).join(',')
-//       )
-//     ].join('\n');
-
-//     // Create and trigger download
-//     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-//     const link = document.createElement('a');
-//     const url = URL.createObjectURL(blob);
-    
-//     link.setAttribute('href', url);
-//     link.setAttribute('download', `${filename}_${new Date().toISOString().split('T')[0]}.csv`);
-//     link.style.visibility = 'hidden';
-    
-//     document.body.appendChild(link);
-//     link.click();
-//     document.body.removeChild(link);
-//     URL.revokeObjectURL(url);
-//   } catch (error) {
-//     console.error('Error generating CSV:', error);
-//     throw new Error('Failed to generate download file');
-//   }
-// };
-
-// export const formatProjectsForExport = (projects: any[]) => {
-//   return projects.map(project => ({
-//     'Project ID': project.id,
-//     'Project Name': project.projectName,
-//     'Description': project.description || 'No description',
-//     'Created By': project.createdBy,
-//     'Status': project.isActive ? 'Active' : 'Inactive',
-//     'Created Date': new Date(project.createdAt).toLocaleDateString('en-IN'),
-//     'Last Updated': new Date(project.updatedAt).toLocaleDateString('en-IN')
-//   }));
-// };
-
-// export const formatProjectDetailsForExport = (projectDetails: any) => {
-//   const { project, tasks, summary, employees } = projectDetails;
-  
-//   // Project Summary
-//   const summaryData = [{
-//     'Type': 'PROJECT SUMMARY',
-//     'Project Name': project.projectName,
-//     'Total Tasks': summary.totalTasks,
-//     'Total Expected Hours': parseFloat(summary.totalExpectedHours).toFixed(2),
-//     'Total Actual Hours': parseFloat(summary.totalActualHours).toFixed(2),
-//     'Variance': parseFloat(summary.variance).toFixed(2),
-//     'Variance Percentage': summary.variancePercentage + '%'
-//   }];
-
-//   // Employee Summary
-//   const employeeData = employees.map((emp: any) => ({
-//     'Type': 'EMPLOYEE SUMMARY',
-//     'Employee Name': emp.employeeName,
-//     'Employee Email': emp.employeeEmail,
-//     'Total Tasks': emp.totalTasks,
-//     'Total Expected Hours': emp.totalExpectedHours.toFixed(2),
-//     'Total Actual Hours': emp.totalActualHours.toFixed(2),
-//     'Approved Tasks': emp.approvedTasks,
-//     'Pending Tasks': emp.pendingTasks,
-//     'Rejected Tasks': emp.rejectedTasks
-//   }));
-
-//   // Task Details
-//   const taskData = tasks.map((task: any) => ({
-//     'Type': 'TASK DETAIL',
-//     'Task Name': task.taskName,
-//     'Employee Name': task.employeeName,
-//     'Employee Email': task.employeeEmail,
-//     'Description': task.description || 'No description',
-//     'Expected Hours': parseFloat(task.expectedHours).toFixed(2),
-//     'Actual Hours': parseFloat(task.actualHours).toFixed(2),
-//     'Status': task.status.charAt(0).toUpperCase() + task.status.slice(1),
-//     'Created Date': new Date(task.createdAt).toLocaleDateString('en-IN'),
-//     'Approved Date': task.approvedAt ? new Date(task.approvedAt).toLocaleDateString('en-IN') : 'Not Approved'
-//   }));
-
-//   return [...summaryData, ...employeeData, ...taskData];
-// };
-
-// // Generic data export function
-// export const exportToCSV = (data: any[], filename: string, customHeaders?: string[]) => {
-//   if (!data.length) return;
-
-//   const headers = customHeaders || Object.keys(data[0]);
-//   const csvContent = [
-//     headers.join(','),
-//     ...data.map(row => 
-//       headers.map(header => {
-//         const value = row[header] === null || row[header] === undefined ? '' : row[header];
-//         return `"${String(value).replace(/"/g, '""')}"`;
-//       }).join(',')
-//     )
-//   ].join('\n');
-
-//   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-//   const link = document.createElement('a');
-//   const url = URL.createObjectURL(blob);
-  
-//   link.setAttribute('href', url);
-//   link.setAttribute('download', `${filename}.csv`);
-//   link.style.visibility = 'hidden';
-  
-//   document.body.appendChild(link);
-//   link.click();
-//   document.body.removeChild(link);
-// };
-
-
-// utils/exportUtils.ts
-// export const downloadCSV = (data: any[], filename: string) => {
-//   if (!data.length) {
-//     console.warn('No data to export');
-//     return;
-//   }
-
-//   try {
-//     const headers = Object.keys(data[0]);
-    
-//     // Create CSV content with proper escaping
-//     const csvContent = [
-//       headers.join(','),
-//       ...data.map(row => 
-//         headers.map(header => {
-//           const value = row[header] === null || row[header] === undefined ? '' : row[header];
-//           // Escape quotes and wrap in quotes
-//           const escapedValue = String(value).replace(/"/g, '""');
-//           return `"${escapedValue}"`;
-//         }).join(',')
-//       )
-//     ].join('\n');
-
-//     // Create and trigger download
-//     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-//     const link = document.createElement('a');
-//     const url = URL.createObjectURL(blob);
-    
-//     link.setAttribute('href', url);
-//     link.setAttribute('download', `${filename}_${new Date().toISOString().split('T')[0]}.csv`);
-//     link.style.visibility = 'hidden';
-    
-//     document.body.appendChild(link);
-//     link.click();
-//     document.body.removeChild(link);
-//     URL.revokeObjectURL(url);
-//   } catch (error) {
-//     console.error('Error generating CSV:', error);
-//     throw new Error('Failed to generate download file');
-//   }
-// };
-
-// export const formatProjectsForExport = (projects: any[]) => {
-//   return projects.map(project => ({
-//     'Project ID': project.id,
-//     'Project Name': project.projectName,
-//     'Description': project.description || 'No description',
-//     'Created By': project.createdBy,
-//     'Status': project.isActive ? 'Active' : 'Inactive',
-//     'Created Date': new Date(project.createdAt).toLocaleDateString('en-IN'),
-//     'Last Updated': new Date(project.updatedAt).toLocaleDateString('en-IN')
-//   }));
-// };
-
-// export const formatProjectDetailsForExport = (projectDetails: any) => {
-//   const { project, tasks, summary } = projectDetails;
-  
-//   // Only export task details with project context
-//   const taskData = tasks.map((task: any) => ({
-//     'Project Name': project.projectName,
-//     'Project Description': project.description || 'No description',
-//     'Task Name': task.taskName,
-//     'Task Description': task.description || 'No description',
-//     'Employee Name': task.employeeName,
-//     'Employee Email': task.employeeEmail,
-//     'Expected Hours': parseFloat(task.expectedHours).toFixed(2),
-//     'Actual Hours': parseFloat(task.actualHours).toFixed(2),
-//     'Variance': (parseFloat(task.actualHours) - parseFloat(task.expectedHours)).toFixed(2),
-//     'Status': task.status.charAt(0).toUpperCase() + task.status.slice(1),
-//     'Created Date': new Date(task.createdAt).toLocaleDateString('en-IN'),
-//     'Approved Date': task.approvedAt ? new Date(task.approvedAt).toLocaleDateString('en-IN') : 'Not Approved'
-//   }));
-
-//   // Add summary row at the top
-//   const summaryRow = {
-//     'Project Name': project.projectName,
-//     'Project Description': `SUMMARY: Total Tasks: ${summary.totalTasks}`,
-//     'Task Name': 'PROJECT TOTALS',
-//     'Task Description': `Variance: ${parseFloat(summary.variance).toFixed(2)}h (${summary.variancePercentage}%)`,
-//     'Employee Name': '-',
-//     'Employee Email': '-',
-//     'Expected Hours': parseFloat(summary.totalExpectedHours).toFixed(2),
-//     'Actual Hours': parseFloat(summary.totalActualHours).toFixed(2),
-//     'Variance': parseFloat(summary.variance).toFixed(2),
-//     'Status': '-',
-//     'Created Date': new Date(project.createdAt).toLocaleDateString('en-IN'),
-//     'Approved Date': '-'
-//   };
-
-//   return [summaryRow, ...taskData];
-// };
-
-// // Alternative: Export tasks only (cleaner for task analysis)
-// export const formatProjectTasksForExport = (projectDetails: any) => {
-//   const { project, tasks } = projectDetails;
-  
-//   return tasks.map((task: any) => ({
-//     'Project Name': project.projectName,
-//     'Task Name': task.taskName,
-//     'Task Description': task.description || 'No description',
-//     'Employee Name': task.employeeName,
-//     'Employee Email': task.employeeEmail,
-//     'Expected Hours': parseFloat(task.expectedHours).toFixed(2),
-//     'Actual Hours': parseFloat(task.actualHours).toFixed(2),
-//     'Variance': (parseFloat(task.actualHours) - parseFloat(task.expectedHours)).toFixed(2),
-//     'Status': task.status.charAt(0).toUpperCase() + task.status.slice(1),
-//     'Created Date': new Date(task.createdAt).toLocaleDateString('en-IN'),
-//     'Approved Date': task.approvedAt ? new Date(task.approvedAt).toLocaleDateString('en-IN') : 'Not Approved'
-//   }));
-// };
-
-// // Generic data export function
-// export const exportToCSV = (data: any[], filename: string, customHeaders?: string[]) => {
-//   if (!data.length) return;
-
-//   const headers = customHeaders || Object.keys(data[0]);
-//   const csvContent = [
-//     headers.join(','),
-//     ...data.map(row => 
-//       headers.map(header => {
-//         const value = row[header] === null || row[header] === undefined ? '' : row[header];
-//         return `"${String(value).replace(/"/g, '""')}"`;
-//       }).join(',')
-//     )
-//   ].join('\n');
-
-//   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-//   const link = document.createElement('a');
-//   const url = URL.createObjectURL(blob);
-  
-//   link.setAttribute('href', url);
-//   link.setAttribute('download', `${filename}.csv`);
-//   link.style.visibility = 'hidden';
-  
-//   document.body.appendChild(link);
-//   link.click();
-//   document.body.removeChild(link);
-// };
-
-
-
-// //////////// new==================================
-
-
-// utils/exportUtils.ts
-/**********************************************
- * ✅ Download CSV helper
- **********************************************/
-export const downloadCSV = (csvString: string, filename: string) => {
-  try {
-    const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${filename}_${new Date().toISOString().split("T")[0]}.csv`;
-    link.style.visibility = "hidden";
-
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    URL.revokeObjectURL(url);
-  } catch (error) {
-    console.error("Error generating CSV:", error);
-    throw new Error("Failed to export");
+// ==================== STYLES ====================
+const styles = {
+  projectHeader: {
+    font: { bold: true, sz: 16, color: { rgb: "2563EB" } },
+    alignment: { horizontal: "center", vertical: "center" },
+    border: {
+      top: { style: "thin", color: { rgb: "E2E8F0" } },
+      bottom: { style: "thin", color: { rgb: "E2E8F0" } },
+      left: { style: "thin", color: { rgb: "E2E8F0" } },
+      right: { style: "thin", color: { rgb: "E2E8F0" } }
+    }
+  },
+  projectDescription: {
+    font: { italic: true, sz: 11, color: { rgb: "475569" } },
+    alignment: { horizontal: "center", vertical: "center", wrapText: true },
+    border: {
+      top: { style: "thin", color: { rgb: "E2E8F0" } },
+      bottom: { style: "thin", color: { rgb: "E2E8F0" } },
+      left: { style: "thin", color: { rgb: "E2E8F0" } },
+      right: { style: "thin", color: { rgb: "E2E8F0" } }
+    }
+  },
+  columnHeader: {
+    font: { bold: true, sz: 12, color: { rgb: "FFFFFF" } },
+    fill: { fgColor: { rgb: "059669" } },
+    alignment: { horizontal: "center", vertical: "center" },
+    border: {
+      top: { style: "medium", color: { rgb: "000000" } },
+      bottom: { style: "medium", color: { rgb: "000000" } },
+      left: { style: "thin", color: { rgb: "000000" } },
+      right: { style: "thin", color: { rgb: "000000" } }
+    }
+  },
+  dataCell: {
+    font: { sz: 10 },
+    alignment: { vertical: "center", wrapText: true },
+    border: {
+      top: { style: "thin", color: { rgb: "E2E8F0" } },
+      bottom: { style: "thin", color: { rgb: "E2E8F0" } },
+      left: { style: "thin", color: { rgb: "E2E8F0" } },
+      right: { style: "thin", color: { rgb: "E2E8F0" } }
+    }
+  },
+  serialCell: {
+    font: { bold: true, sz: 10 },
+    fill: { fgColor: { rgb: "F8FAFC" } },
+    alignment: { horizontal: "center", vertical: "center" },
+    border: {
+      top: { style: "thin", color: { rgb: "E2E8F0" } },
+      bottom: { style: "thin", color: { rgb: "E2E8F0" } },
+      left: { style: "thin", color: { rgb: "E2E8F0" } },
+      right: { style: "thin", color: { rgb: "E2E8F0" } }
+    }
+  },
+  hoursCell: {
+    font: { sz: 10, bold: false, color: { rgb: "000000" } },
+    alignment: { horizontal: "center", vertical: "center" },
+    border: {
+      top: { style: "thin", color: { rgb: "E2E8F0" } },
+      bottom: { style: "thin", color: { rgb: "E2E8F0" } },
+      left: { style: "thin", color: { rgb: "E2E8F0" } },
+      right: { style: "thin", color: { rgb: "E2E8F0" } }
+    }
   }
 };
 
+// ==================== EXPORT FUNCTIONS ====================
 
-/**********************************************
- * ✅ FORMAT − PROJECT DETAILS (TOP + TASK TABLE)
- **********************************************/
-export const formatProjectDetailsForExport = (projectDetails: any) => {
-  const { project, tasks } = projectDetails;
-
-  let csv = "";
-
-  // ✅ Project Title (line 1)
-  csv += `"${String(project.projectName).replace(/"/g, '""')}"\n`;
-
-  // ✅ Description (line 2)
-  csv += `"${String(project.description || "No description").replace(/"/g, '""')}"\n`;
-
-  // ✅ Gap lines
-  csv += `\n`;
-
-  // ✅ Table Header
-  csv += `Sr. No.,Task Name,Task Description,Expected Hours\n`;
-
-  // ✅ Task Rows
-  tasks.forEach((task: any, index: number) => {
-    const row = [
-      index + 1,
-      task.taskName ?? "",
-      task.description || "No description",
-      parseFloat(task.expectedHours).toFixed(2)
-    ].map((value) => `"${String(value).replace(/"/g, '""')}"`);
-
-    csv += row.join(",") + "\n";
-  });
-
-  return csv;
-};
-
-
-/**********************************************
- * ✅ MAIN EXPORT FUNCTION
- **********************************************/
-export const exportProjectToCSV = (projectDetails: any, filename: string) => {
-  const csvData = formatProjectDetailsForExport(projectDetails);
-
-  if (!csvData) {
-    console.warn("No data found for export");
+/**
+ * Download Excel file with styled data
+ */
+export const downloadExcel = (data: any[], filename: string, sheetName: string = 'Sheet1') => {
+  if (!data.length) {
+    console.warn('No data to export');
     return;
   }
 
-  downloadCSV(csvData, filename);
+  try {
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    XLSX.writeFile(wb, `${filename}_${new Date().toISOString().split('T')[0]}.xlsx`);
+  } catch (error) {
+    console.error('Error generating Excel:', error);
+    throw new Error('Failed to generate download file');
+  }
 };
 
-
-
-/**********************************************
- * ✅ Optional — Format project list table (unchanged)
- **********************************************/
+/**
+ * Format projects list for Excel export with styling
+ */
 export const formatProjectsForExport = (projects: any[]) => {
-  if (!projects.length) return "";
+  const ws_data: any[][] = [];
+  
+  // Header row
+  ws_data.push([
+    { v: 'Project ID', s: styles.columnHeader },
+    { v: 'Project Name', s: styles.columnHeader },
+    { v: 'Description', s: styles.columnHeader },
+    { v: 'Created By', s: styles.columnHeader },
+    { v: 'Status', s: styles.columnHeader },
+    { v: 'Created Date', s: styles.columnHeader },
+    { v: 'Last Updated', s: styles.columnHeader }
+  ]);
 
-  const headers = [
-    "Project ID",
-    "Project Name",
-    "Description",
-    "Created By",
-    "Status",
-    "Created Date",
-    "Last Updated",
+  // Data rows with alternating colors
+  projects.forEach((project, idx) => {
+    const rowStyle = idx % 2 === 0 ? styles.dataCell : { 
+      ...styles.dataCell, 
+      fill: { fgColor: { rgb: "F8FAFC" } } 
+    };
+    
+    ws_data.push([
+      { v: project.id, s: rowStyle },
+      { v: project.projectName, s: rowStyle },
+      { v: project.description || 'No description', s: rowStyle },
+      { v: project.createdBy, s: rowStyle },
+      { v: project.isActive ? 'Active' : 'Inactive', s: rowStyle },
+      { v: new Date(project.createdAt).toLocaleDateString('en-IN'), s: rowStyle },
+      { v: new Date(project.updatedAt).toLocaleDateString('en-IN'), s: rowStyle }
+    ]);
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(ws_data);
+  
+  // Set column widths
+  ws['!cols'] = [
+    { wch: 12 },  // Project ID
+    { wch: 25 },  // Project Name
+    { wch: 40 },  // Description
+    { wch: 20 },  // Created By
+    { wch: 12 },  // Status
+    { wch: 15 },  // Created Date
+    { wch: 15 }   // Last Updated
   ];
 
-  let csv = headers.join(",") + "\n";
-
-  projects.forEach((project) => {
-    const row = [
-      project.id,
-      project.projectName,
-      project.description || "No description",
-      project.createdBy,
-      project.isActive ? "Active" : "Inactive",
-      new Date(project.createdAt).toLocaleDateString("en-IN"),
-      new Date(project.updatedAt).toLocaleDateString("en-IN"),
-    ].map((val) => `"${String(val).replace(/"/g, '""')}"`);
-
-    csv += row.join(",") + "\n";
-  });
-
-  return csv;
+  return ws;
 };
 
-
-
-/**********************************************
- * ✅ Optional — Generic dataset export
- **********************************************/
-export const exportToCSV = (data: any[], filename: string, customHeaders?: string[]) => {
-  if (!data.length) return;
-
-  const headers = customHeaders || Object.keys(data[0]);
-
-  let csv = headers.join(",") + "\n";
-
-  data.forEach((row) => {
-    const line = headers
-      .map((header) => {
-        const val = row[header] ?? "";
-        return `"${String(val).replace(/"/g, '""')}"`;
-      })
-      .join(",");
-
-    csv += line + "\n";
+/**
+ * Format project details for Excel export with premium styling
+ * Layout: Project Name (top center - COLORED TEXT ONLY), Description (below - COLORED TEXT ONLY), then tasks table
+ */
+export const formatProjectDetailsForExport = (projectDetails: any) => {
+  const { project, tasks } = projectDetails;
+  const ws_data: any[][] = [];
+  
+  // Row 1: Project Name (will be merged - put value in FIRST cell)
+  ws_data.push([
+    { v: project.projectName, s: styles.projectHeader },
+    { v: '', s: styles.projectHeader },
+    { v: '', s: styles.projectHeader },
+    { v: '', s: styles.projectHeader }
+  ]);
+  
+  // Row 2: Project Description (will be merged - put value in FIRST cell)
+  ws_data.push([
+    { v: project.description || 'No description', s: styles.projectDescription },
+    { v: '', s: styles.projectDescription },
+    { v: '', s: styles.projectDescription },
+    { v: '', s: styles.projectDescription }
+  ]);
+  
+  // Row 3: Empty row for spacing
+  ws_data.push([
+    { v: '', s: {} },
+    { v: '', s: {} },
+    { v: '', s: {} },
+    { v: '', s: {} }
+  ]);
+  
+  // Row 4: Column Headers
+  ws_data.push([
+    { v: 'Sr. No.', s: styles.columnHeader },
+    { v: 'Task Name', s: styles.columnHeader },
+    { v: 'Task Description', s: styles.columnHeader },
+    { v: 'Hours', s: styles.columnHeader }
+  ]);
+  
+  // Task Data Rows with alternating colors
+  tasks.forEach((task: any, index: number) => {
+    const isEven = index % 2 === 0;
+    const rowStyle = isEven ? styles.dataCell : { 
+      ...styles.dataCell, 
+      fill: { fgColor: { rgb: "F8FAFC" } } 
+    };
+    
+    ws_data.push([
+      { v: index + 1, s: styles.serialCell },
+      { v: task.taskName, s: rowStyle },
+      { v: task.description || 'No description', s: rowStyle },
+      { v: parseFloat(task.expectedHours).toFixed(2), s: styles.hoursCell }
+    ]);
   });
 
-  downloadCSV(csv, filename);
+  // Create worksheet
+  const ws = XLSX.utils.aoa_to_sheet(ws_data);
+  
+  // Merge cells for project name and description
+  if (!ws['!merges']) ws['!merges'] = [];
+  ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }); // Project name row
+  ws['!merges'].push({ s: { r: 1, c: 0 }, e: { r: 1, c: 3 } }); // Description row
+  
+  // Set column widths
+  ws['!cols'] = [
+    { wch: 10 },  // Sr. No.
+    { wch: 30 },  // Task Name
+    { wch: 50 },  // Task Description
+    { wch: 15 }   // Expected Hours
+  ];
+  
+  // Set row heights
+  ws['!rows'] = [
+    { hpt: 30 },  // Project name row
+    { hpt: 25 },  // Description row
+    { hpt: 10 },  // Empty row
+    { hpt: 25 }   // Header row
+  ];
+
+  return ws;
 };
 
-
-
-/**********************************************
- * ✅ Optional — Only task format helper
- **********************************************/
+/**
+ * Format project tasks only (simpler format without project header)
+ */
 export const formatProjectTasksForExport = (projectDetails: any) => {
   const { tasks } = projectDetails;
+  const ws_data: any[][] = [];
+  
+  // Header row
+  ws_data.push([
+    { v: 'Sr. No.', s: styles.columnHeader },
+    { v: 'Task Name', s: styles.columnHeader },
+    { v: 'Task Description', s: styles.columnHeader },
+    { v: 'Expected Hours', s: styles.columnHeader }
+  ]);
+  
+  // Task data with alternating colors
+  tasks.forEach((task: any, index: number) => {
+    const isEven = index % 2 === 0;
+    const rowStyle = isEven ? styles.dataCell : { 
+      ...styles.dataCell, 
+      fill: { fgColor: { rgb: "F8FAFC" } } 
+    };
+    
+    ws_data.push([
+      { v: index + 1, s: styles.serialCell },
+      { v: task.taskName, s: rowStyle },
+      { v: task.description || 'No description', s: rowStyle },
+      { v: parseFloat(task.expectedHours).toFixed(2), s: styles.hoursCell }
+    ]);
+  });
 
-  return tasks.map((task: any, index: number) => ({
-    "Sr. No.": index + 1,
-    "Task Name": task.taskName,
-    "Task Description": task.description || "No description",
-    "Expected Hours": parseFloat(task.expectedHours).toFixed(2)
-  }));
+  const ws = XLSX.utils.aoa_to_sheet(ws_data);
+  
+  ws['!cols'] = [
+    { wch: 10 },  // Sr. No.
+    { wch: 30 },  // Task Name
+    { wch: 50 },  // Task Description
+    { wch: 15 }   // Expected Hours
+  ];
+
+  return ws;
 };
 
+/**
+ * Main export function for projects list
+ */
+export const exportProjectsToExcel = (projects: any[], filename: string = 'projects_export') => {
+  try {
+    const wb = XLSX.utils.book_new();
+    const ws = formatProjectsForExport(projects);
+    
+    XLSX.utils.book_append_sheet(wb, ws, 'Projects List');
+    XLSX.writeFile(wb, `${filename}_${new Date().toISOString().split('T')[0]}.xlsx`);
+  } catch (error) {
+    console.error('Error generating Excel:', error);
+    throw new Error('Failed to generate download file');
+  }
+};
 
+/**
+ * Main export function for project details
+ */
+export const exportProjectDetailsToExcel = (projectDetails: any, filename?: string) => {
+  try {
+    const wb = XLSX.utils.book_new();
+    const ws = formatProjectDetailsForExport(projectDetails);
+    
+    const exportFilename = filename || `project_${projectDetails.project.projectName}_details`;
+    
+    XLSX.utils.book_append_sheet(wb, ws, 'Project Details');
+    XLSX.writeFile(wb, `${exportFilename}_${new Date().toISOString().split('T')[0]}.xlsx`);
+  } catch (error) {
+    console.error('Error generating Excel:', error);
+    throw new Error('Failed to generate download file');
+  }
+};
+
+// Legacy CSV functions for backward compatibility
+export const downloadCSV = (data: any[], filename: string) => {
+  console.warn('downloadCSV is deprecated. Use exportProjectsToExcel or exportProjectDetailsToExcel instead.');
+  
+  if (!data.length) {
+    console.warn('No data to export');
+    return;
+  }
+
+  try {
+    const headers = Object.keys(data[0]);
+    const csvContent = [
+      headers.join(','),
+      ...data.map(row => 
+        headers.map(header => {
+          const value = row[header] === null || row[header] === undefined ? '' : row[header];
+          const escapedValue = String(value).replace(/"/g, '""');
+          return `"${escapedValue}"`;
+        }).join(',')
+      )
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${filename}_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Error generating CSV:', error);
+    throw new Error('Failed to generate download file');
+  }
+};

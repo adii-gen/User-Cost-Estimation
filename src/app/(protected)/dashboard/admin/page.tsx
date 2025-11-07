@@ -2,7 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { Plus, Loader2 } from 'lucide-react';
-import { downloadCSV, formatProjectDetailsForExport, formatProjectsForExport } from '@/utils/exportUtils';
+import { 
+  exportProjectsToExcel, 
+  exportProjectDetailsToExcel 
+} from '@/utils/exportUtils';
 import DownloadButton from '@/components/DownloadButton';
 import SearchBox from '@/components/SearchBox';
 import {AddProjectModal} from '@/components/admin/dashboard/AddProjectModal';
@@ -82,6 +85,7 @@ export default function AdminDashboard() {
     checkUserRole();
     fetchProjects();
   }, []);
+
   useEffect(() => {
     // Filter projects based on search term
     if (searchTerm) {
@@ -95,6 +99,7 @@ export default function AdminDashboard() {
       setFilteredProjects(projects);
     }
   }, [searchTerm, projects]);
+
   const checkUserRole = async () => {
     try {
       const response = await fetch('/api/auth/session');
@@ -147,11 +152,12 @@ export default function AdminDashboard() {
     setSelectedProjectId(project.id);
     fetchProjectDetails(project.id);
   };
+
+  // ==================== EXCEL EXPORT HANDLERS ====================
   const handleExportProjects = async () => {
     setIsExporting(true);
     try {
-      const dataToExport = formatProjectsForExport(filteredProjects);
-      downloadCSV(dataToExport, 'projects_export');
+      exportProjectsToExcel(filteredProjects, 'projects_export');
     } catch (error) {
       console.error('Export failed:', error);
       setError('Failed to export data');
@@ -165,8 +171,10 @@ export default function AdminDashboard() {
 
     setIsExporting(true);
     try {
-      const dataToExport = formatProjectDetailsForExport(projectDetails);
-      downloadCSV(dataToExport, `project_${projectDetails.project.projectName}_details`);
+      exportProjectDetailsToExcel(
+        projectDetails, 
+        `project_${projectDetails.project.projectName}_details`
+      );
     } catch (error) {
       console.error('Export failed:', error);
       setError('Failed to export project details');
@@ -174,6 +182,7 @@ export default function AdminDashboard() {
       setIsExporting(false);
     }
   };
+
   const handleBack = () => {
     setSelectedProjectId(null);
     setProjectDetails(null);
@@ -215,6 +224,7 @@ export default function AdminDashboard() {
 
   const isAdmin = userRole === 'platform_admin';
 
+  // ==================== PROJECT DETAIL VIEW ====================
   if (selectedProjectId && projectDetails) {
     return (
       <div className="min-h-screen bg-gray-50 p-8">
@@ -223,122 +233,124 @@ export default function AdminDashboard() {
             projectDetails={projectDetails}
             onBack={handleBack}
             isLoading={isLoadingDetails}
-            onExport={handleExportProjectDetails} // Add this
-            isExporting={isExporting} // Add this
+            onExport={handleExportProjectDetails}
+            isExporting={isExporting}
           />
         </div>
       </div>
     );
   }
 
+  // ==================== MAIN DASHBOARD VIEW ====================
   return (
-   <>
+    <>
+      <Navigation/>
+      <div className="min-h-screen bg-gray-50 p-8">
+        <div className="max-w-7xl mx-auto">
+          {/* Header Section */}
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">
+                {isAdmin ? 'Admin Dashboard' : 'Projects Dashboard'}
+              </h1>
+              <p className="text-gray-600 mt-2">
+                {isAdmin ? 'Manage projects and track team contributions' : 'View all active projects'}
+              </p>
+            </div>
+            {isAdmin && (
+              <button
+                onClick={() => setShowAddProject(true)}
+                className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm"
+              >
+                <Plus className="w-5 h-5" />
+                Add New Project
+              </button>
+            )}
+          </div>
 
-    <Navigation/>
-     <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              {isAdmin ? 'Admin Dashboard' : 'Projects Dashboard'}
-            </h1>
-            <p className="text-gray-600 mt-2">
-              {isAdmin ? 'Manage projects and track team contributions' : 'View all active projects'}
-            </p>
-          </div>
-          {isAdmin && (
-            <button
-              onClick={() => setShowAddProject(true)}
-              className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm"
-            >
-              <Plus className="w-5 h-5" />
-              Add New Project
-            </button>
-          )}
-        </div>
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          <div className="flex-1">
-            <SearchBox
-              value={searchTerm}
-              onChange={setSearchTerm}
-              placeholder="Search projects by name, description, or creator..."
-              className="w-full"
-            />
-          </div>
-          <div className="flex gap-2">
-            {!selectedProjectId ? (
+          {/* Search and Export Section */}
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="flex-1">
+              <SearchBox
+                value={searchTerm}
+                onChange={setSearchTerm}
+                placeholder="Search projects by name, description, or creator..."
+                className="w-full"
+              />
+            </div>
+            <div className="flex gap-2">
               <DownloadButton
                 onDownload={handleExportProjects}
                 isLoading={isExporting}
                 disabled={filteredProjects.length === 0}
                 variant="outline"
               >
-                Export Projects ({filteredProjects.length})
+                Export to Excel ({filteredProjects.length})
               </DownloadButton>
-            ) : (
-              <DownloadButton
-                onDownload={handleExportProjectDetails}
-                isLoading={isExporting}
-                disabled={!projectDetails}
-                variant="outline"
-              >
-                Export Project Details
-              </DownloadButton>
-            )}
+            </div>
           </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+              {error}
+            </div>
+          )}
+
+          {/* Loading State */}
+          {isLoading ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+            </div>
+          ) : (
+            <>
+              {/* Projects Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredProjects.map((project) => (
+                  <ProjectCard
+                    key={project.id}
+                    project={project}
+                    onClick={() => handleProjectClick(project)}
+                    onDelete={() => handleDeleteClick(project)}
+                    isAdmin={isAdmin}
+                  />
+                ))}
+              </div>
+
+              {/* Empty State */}
+              {filteredProjects.length === 0 && (
+                <div className="text-center py-16">
+                  <p className="text-gray-500 text-lg">
+                    {searchTerm 
+                      ? 'No projects found matching your search.' 
+                      : isAdmin
+                        ? 'No projects yet. Click "Add New Project" to get started.'
+                        : 'No projects available.'}
+                  </p>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Modals */}
+          <AddProjectModal
+            isOpen={showAddProject}
+            onClose={() => setShowAddProject(false)}
+            onSuccess={handleProjectCreated}
+          />
+
+          <DeleteConfirmModal
+            isOpen={showDeleteModal}
+            projectName={projectToDelete?.projectName || ''}
+            onConfirm={handleDeleteConfirm}
+            onCancel={() => {
+              setShowDeleteModal(false);
+              setProjectToDelete(null);
+            }}
+            isDeleting={isDeleting}
+          />
         </div>
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
-            {error}
-          </div>
-        )}
-
-        {isLoading ? (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProjects.map((project) => (
-              <ProjectCard
-                key={project.id}
-                project={project}
-                onClick={() => handleProjectClick(project)}
-                onDelete={() => handleDeleteClick(project)}
-                isAdmin={isAdmin}
-              />
-            ))}
-          </div>
-        )}
-
-        {!isLoading && projects.length === 0 && (
-          <div className="text-center py-16">
-            <p className="text-gray-500 text-lg">
-              {isAdmin
-                ? 'No projects yet. Click "Add New Project" to get started.'
-                : 'No projects available.'}
-            </p>
-          </div>
-        )}
-
-        <AddProjectModal
-          isOpen={showAddProject}
-          onClose={() => setShowAddProject(false)}
-          onSuccess={handleProjectCreated}
-        />
-
-        <DeleteConfirmModal
-          isOpen={showDeleteModal}
-          projectName={projectToDelete?.projectName || ''}
-          onConfirm={handleDeleteConfirm}
-          onCancel={() => {
-            setShowDeleteModal(false);
-            setProjectToDelete(null);
-          }}
-          isDeleting={isDeleting}
-        />
       </div>
-    </div>
-   </>
+    </>
   );
 }
