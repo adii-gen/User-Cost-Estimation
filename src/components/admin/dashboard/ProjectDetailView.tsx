@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { CheckCircle2, Clock, Edit2, Loader2, TrendingDown, TrendingUp, X } from "lucide-react";
+import { CheckCircle2, Clock, Edit2, Loader2, TrendingDown, TrendingUp, X, Trash2 } from "lucide-react";
 import DownloadButton from '@/components/DownloadButton';
 import SearchBox from '@/components/SearchBox';
 import Navigation from "@/components/pages/Navbar";
@@ -59,8 +59,8 @@ export const ProjectDetailView: React.FC<{
   projectDetails: ProjectDetails;
   onBack: () => void;
   isLoading: boolean;
-  onExport?: () => void; // Add this
-  isExporting?: boolean; // Add this
+  onExport?: () => void;
+  isExporting?: boolean;
 }> = ({ projectDetails, onBack, isLoading, onExport, isExporting }) => {
 
   const { project, tasks, summary, employees } = projectDetails;
@@ -73,6 +73,7 @@ export const ProjectDetailView: React.FC<{
   const [editedExpectedHours, setEditedExpectedHours] = useState('');
   const [editedStatus, setEditedStatus] = useState<'pending' | 'approved' | 'rejected'>('pending');
   const [isSaving, setIsSaving] = useState(false);
+  const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
 
   // Search
   const [taskSearchTerm, setTaskSearchTerm] = useState('');
@@ -200,6 +201,38 @@ export const ProjectDetailView: React.FC<{
   };
 
 
+  // ✅ Delete task WITHOUT full page reload
+  const handleDeleteTask = async (taskId: string) => {
+    if (!confirm('Are you sure you want to delete this task? This action cannot be undone.')) {
+      return;
+    }
+
+    setDeletingTaskId(taskId);
+
+    try {
+      const response = await fetch(`/api/tasks/${taskId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to delete task');
+      }
+
+      // ✅ Remove from local state
+      setAllTasks(prev => prev.filter(t => t.taskId !== taskId));
+      setFilteredTasks(prev => prev.filter(t => t.taskId !== taskId));
+
+      alert('Task deleted successfully');
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      alert(error instanceof Error ? error.message : 'Failed to delete task');
+    } finally {
+      setDeletingTaskId(null);
+    }
+  };
+
+
   const varianceNum = parseFloat(summary.variance);
   const isOverBudget = varianceNum > 0;
 
@@ -289,7 +322,7 @@ export const ProjectDetailView: React.FC<{
             <p className="text-3xl font-bold text-purple-600">{parseFloat(summary.totalActualHours).toFixed(1)}</p>
           </div>
 
-          <div className="bg-white p-6 rounded-lg border border-gray-200">
+          {/* <div className="bg-white p-6 rounded-lg border border-gray-200">
             <p className="text-sm text-gray-500 mb-1">Variance</p>
             <div className="flex items-center gap-2">
               <p className={`text-3xl font-bold ${isOverBudget ? 'text-red-600' : 'text-green-600'}`}>
@@ -300,7 +333,7 @@ export const ProjectDetailView: React.FC<{
             <p className={`text-xs mt-1 ${isOverBudget ? 'text-red-600' : 'text-green-600'}`}>
               {summary.variancePercentage}%
             </p>
-          </div>
+          </div> */}
         </div>
 
 
@@ -428,13 +461,28 @@ export const ProjectDetailView: React.FC<{
                           </button>
                         </div>
                       ) : (
-                        <button
-                          onClick={() => handleEditClick(task)}
-                          className="text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                          Edit
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleEditClick(task)}
+                            className="text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                            Edit
+                          </button>
+
+                          <button
+                            onClick={() => handleDeleteTask(task.taskId)}
+                            disabled={deletingTaskId === task.taskId}
+                            className="text-red-600 hover:text-red-700 font-medium flex items-center gap-1 disabled:opacity-50"
+                          >
+                            {deletingTaskId === task.taskId ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
+                            Delete
+                          </button>
+                        </div>
                       )}
                     </td>
 
