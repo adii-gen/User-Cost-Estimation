@@ -300,6 +300,199 @@ export const exportProjectDetailsToExcel = (projectDetails: any, filename?: stri
   }
 };
 
+// ==================== NEW: SELECTIVE EXPORT FUNCTIONS ====================
+
+/**
+ * Export only selected projects
+ */
+export const exportSelectedProjectsToExcel = (
+  allProjects: any[], 
+  selectedProjectIds: Set<string>, 
+  filename: string = 'selected_projects_export'
+) => {
+  try {
+    // Filter only selected projects
+    const selectedProjects = allProjects.filter(project => 
+      selectedProjectIds.has(project.id)
+    );
+
+    if (selectedProjects.length === 0) {
+      console.warn('No projects selected for export');
+      return;
+    }
+
+    const wb = XLSX.utils.book_new();
+    const ws = formatProjectsForExport(selectedProjects);
+    
+    XLSX.utils.book_append_sheet(wb, ws, 'Selected Projects');
+    XLSX.writeFile(wb, `${filename}_${new Date().toISOString().split('T')[0]}.xlsx`);
+  } catch (error) {
+    console.error('Error generating Excel:', error);
+    throw new Error('Failed to generate download file');
+  }
+};
+
+/**
+ * Export only selected tasks from project details
+ */
+export const exportSelectedTasksToExcel = (
+  projectDetails: any,
+  selectedTaskIds: Set<string>,
+  filename?: string
+) => {
+  try {
+    // Filter only selected tasks
+    const selectedTasks = projectDetails.tasks.filter((task: any) => 
+      selectedTaskIds.has(task.taskId)
+    );
+
+    if (selectedTasks.length === 0) {
+      console.warn('No tasks selected for export');
+      return;
+    }
+
+    // Create modified project details with only selected tasks
+    const modifiedProjectDetails = {
+      ...projectDetails,
+      tasks: selectedTasks
+    };
+
+    const wb = XLSX.utils.book_new();
+    const ws = formatProjectDetailsForExport(modifiedProjectDetails);
+    
+    const exportFilename = filename || `project_${projectDetails.project.projectName}_selected_tasks`;
+    
+    XLSX.utils.book_append_sheet(wb, ws, 'Selected Tasks');
+    XLSX.writeFile(wb, `${exportFilename}_${new Date().toISOString().split('T')[0]}.xlsx`);
+  } catch (error) {
+    console.error('Error generating Excel:', error);
+    throw new Error('Failed to generate download file');
+  }
+};
+
+/**
+ * Export selected tasks with full task details (employee info, status, etc.)
+ */
+export const exportSelectedTasksDetailedToExcel = (
+  projectDetails: any,
+  selectedTaskIds: Set<string>,
+  filename?: string
+) => {
+  try {
+    const { project, tasks } = projectDetails;
+    
+    // Filter only selected tasks
+    const selectedTasks = tasks.filter((task: any) => 
+      selectedTaskIds.has(task.taskId)
+    );
+
+    if (selectedTasks.length === 0) {
+      console.warn('No tasks selected for export');
+      return;
+    }
+
+    const ws_data: any[][] = [];
+    
+    // Row 1: Project Name
+    ws_data.push([
+      { v: project.projectName, s: styles.projectHeader },
+      { v: '', s: styles.projectHeader },
+      { v: '', s: styles.projectHeader },
+      { v: '', s: styles.projectHeader },
+      { v: '', s: styles.projectHeader },
+      { v: '', s: styles.projectHeader },
+      { v: '', s: styles.projectHeader }
+    ]);
+    
+    // Row 2: Project Description
+    ws_data.push([
+      { v: project.description || 'No description', s: styles.projectDescription },
+      { v: '', s: styles.projectDescription },
+      { v: '', s: styles.projectDescription },
+      { v: '', s: styles.projectDescription },
+      { v: '', s: styles.projectDescription },
+      { v: '', s: styles.projectDescription },
+      { v: '', s: styles.projectDescription }
+    ]);
+    
+    // Row 3: Empty row
+    ws_data.push([
+      { v: '', s: {} },
+      { v: '', s: {} },
+      { v: '', s: {} },
+      { v: '', s: {} },
+      { v: '', s: {} },
+      { v: '', s: {} },
+      { v: '', s: {} }
+    ]);
+    
+    // Row 4: Column Headers (with more details)
+    ws_data.push([
+      { v: 'Sr. No.', s: styles.columnHeader },
+      { v: 'Employee Name', s: styles.columnHeader },
+      { v: 'Task Name', s: styles.columnHeader },
+      { v: 'Description', s: styles.columnHeader },
+      { v: 'Expected Hours', s: styles.columnHeader },
+      { v: 'Actual Hours', s: styles.columnHeader },
+      { v: 'Status', s: styles.columnHeader }
+    ]);
+    
+    // Task Data Rows
+    selectedTasks.forEach((task: any, index: number) => {
+      const isEven = index % 2 === 0;
+      const rowStyle = isEven ? styles.dataCell : { 
+        ...styles.dataCell, 
+        fill: { fgColor: { rgb: "F8FAFC" } } 
+      };
+      
+      ws_data.push([
+        { v: index + 1, s: styles.serialCell },
+        { v: task.employeeName, s: rowStyle },
+        { v: task.taskName, s: rowStyle },
+        { v: task.description || 'No description', s: rowStyle },
+        { v: parseFloat(task.expectedHours).toFixed(2), s: styles.hoursCell },
+        { v: parseFloat(task.actualHours).toFixed(2), s: styles.hoursCell },
+        { v: task.status.toUpperCase(), s: rowStyle }
+      ]);
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(ws_data);
+    
+    // Merge cells
+    if (!ws['!merges']) ws['!merges'] = [];
+    ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }); // Project name
+    ws['!merges'].push({ s: { r: 1, c: 0 }, e: { r: 1, c: 6 } }); // Description
+    
+    // Set column widths
+    ws['!cols'] = [
+      { wch: 10 },  // Sr. No.
+      { wch: 25 },  // Employee Name
+      { wch: 30 },  // Task Name
+      { wch: 40 },  // Description
+      { wch: 15 },  // Expected Hours
+      { wch: 15 },  // Actual Hours
+      { wch: 12 }   // Status
+    ];
+    
+    // Set row heights
+    ws['!rows'] = [
+      { hpt: 30 },  // Project name
+      { hpt: 25 },  // Description
+      { hpt: 10 },  // Empty row
+      { hpt: 25 }   // Header
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Selected Tasks');
+    
+    const exportFilename = filename || `project_${project.projectName}_selected_tasks`;
+    XLSX.writeFile(wb, `${exportFilename}_${new Date().toISOString().split('T')[0]}.xlsx`);
+  } catch (error) {
+    console.error('Error generating Excel:', error);
+    throw new Error('Failed to generate download file');
+  }
+};
+
 // Legacy CSV functions for backward compatibility
 export const downloadCSV = (data: any[], filename: string) => {
   console.warn('downloadCSV is deprecated. Use exportProjectsToExcel or exportProjectDetailsToExcel instead.');

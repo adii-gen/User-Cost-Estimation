@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { CheckCircle2, Clock, Edit2, Loader2, TrendingDown, TrendingUp, X, Trash2 } from "lucide-react";
+import { CheckCircle2, Clock, Edit2, Loader2, TrendingDown, TrendingUp, X, Trash2, CheckSquare, Square } from "lucide-react";
 import DownloadButton from '@/components/DownloadButton';
 import SearchBox from '@/components/SearchBox';
 import Navigation from "@/components/pages/Navbar";
+import { exportSelectedTasksDetailedToExcel } from '@/utils/exportUtils';  // ✅ NEW IMPORT
 
 
 // ==================== TYPES ====================
@@ -59,9 +60,7 @@ export const ProjectDetailView: React.FC<{
   projectDetails: ProjectDetails;
   onBack: () => void;
   isLoading: boolean;
-  onExport?: () => void;
-  isExporting?: boolean;
-}> = ({ projectDetails, onBack, isLoading, onExport, isExporting }) => {
+}> = ({ projectDetails, onBack, isLoading }) => {
 
   const { project, tasks, summary, employees } = projectDetails;
 
@@ -74,12 +73,16 @@ export const ProjectDetailView: React.FC<{
   const [editedStatus, setEditedStatus] = useState<'pending' | 'approved' | 'rejected'>('pending');
   const [isSaving, setIsSaving] = useState(false);
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Search
   const [taskSearchTerm, setTaskSearchTerm] = useState('');
   const [filteredTasks, setFilteredTasks] = useState<Task[]>(allTasks);
   const [employeeSearchTerm, setEmployeeSearchTerm] = useState('');
   const [filteredEmployees, setFilteredEmployees] = useState<EmployeeSummary[]>(employees);
+
+  // ==================== SELECTION STATE ====================
+  const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
 
   
   // Filter tasks based on search
@@ -111,6 +114,52 @@ export const ProjectDetailView: React.FC<{
       setFilteredEmployees(employees);
     }
   }, [employeeSearchTerm, employees]);
+
+
+  // ==================== SELECTION HANDLERS ====================
+  const handleToggleSelect = (taskId: string) => {
+    setSelectedTasks(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(taskId)) {
+        newSet.delete(taskId);
+      } else {
+        newSet.add(taskId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = () => {
+    const allIds = new Set(filteredTasks.map(t => t.taskId));
+    setSelectedTasks(allIds);
+  };
+
+  const handleDeselectAll = () => {
+    setSelectedTasks(new Set());
+  };
+
+  const isTaskSelected = (taskId: string) => {
+    return selectedTasks.has(taskId);
+  };
+
+  // ==================== ✅ UPDATED EXPORT HANDLER ====================
+  const handleExportSelected = async () => {
+    if (selectedTasks.size === 0) return;
+    
+    setIsExporting(true);
+    try {
+      // ✅ Use new selective export function with detailed info
+      exportSelectedTasksDetailedToExcel(
+        projectDetails,
+        selectedTasks,
+        `project_${project.projectName}_selected_tasks`
+      );
+    } catch (error) {
+      console.error('Export failed:', error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
 
   const handleEditClick = (task: Task) => {
@@ -222,6 +271,13 @@ export const ProjectDetailView: React.FC<{
       // ✅ Remove from local state
       setAllTasks(prev => prev.filter(t => t.taskId !== taskId));
       setFilteredTasks(prev => prev.filter(t => t.taskId !== taskId));
+      
+      // Remove from selection if selected
+      setSelectedTasks(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(taskId);
+        return newSet;
+      });
 
       alert('Task deleted successfully');
     } catch (error) {
@@ -286,15 +342,45 @@ export const ProjectDetailView: React.FC<{
                 className="w-full"
               />
             </div>
-            <DownloadButton
-              onDownload={onExport || (() => { })}
-              isLoading={isExporting}
-              disabled={allTasks.length === 0}
-              variant="outline"
-            >
-              Export Project Data
-            </DownloadButton>
+            
+            {/* Select/Deselect & Export Buttons */}
+            <div className="flex gap-2">
+              {filteredTasks.length > 0 && (
+                <>
+                  {/* <button
+                    onClick={handleSelectAll}
+                    className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                  >
+                    <CheckSquare className="w-4 h-4" />
+                    Select All
+                  </button> */}
+                  {/* <button
+                    onClick={handleDeselectAll}
+                    className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                    disabled={selectedTasks.size === 0}
+                  >
+                    <Square className="w-4 h-4" />
+                    Deselect All
+                  </button> */}
+                </>
+              )}
+              <DownloadButton
+                onDownload={handleExportSelected}
+                isLoading={isExporting}
+                disabled={selectedTasks.size === 0}
+                variant="outline"
+              >
+                Export Selected ({selectedTasks.size})
+              </DownloadButton>
+            </div>
           </div>
+
+          {/* Selection Counter */}
+          {filteredTasks.length > 0 && (
+            <div className="mb-4 text-sm text-gray-600">
+              {selectedTasks.size} of {filteredTasks.length} tasks selected for export
+            </div>
+          )}
 
           <div className="flex justify-between items-start">
             <div>
@@ -321,19 +407,6 @@ export const ProjectDetailView: React.FC<{
             <p className="text-sm text-gray-500 mb-1">Actual Hours</p>
             <p className="text-3xl font-bold text-purple-600">{parseFloat(summary.totalActualHours).toFixed(1)}</p>
           </div>
-
-          {/* <div className="bg-white p-6 rounded-lg border border-gray-200">
-            <p className="text-sm text-gray-500 mb-1">Variance</p>
-            <div className="flex items-center gap-2">
-              <p className={`text-3xl font-bold ${isOverBudget ? 'text-red-600' : 'text-green-600'}`}>
-                {isOverBudget ? '+' : ''}{parseFloat(summary.variance).toFixed(1)}
-              </p>
-              {isOverBudget ? <TrendingUp className="w-5 h-5 text-red-600" /> : <TrendingDown className="w-5 h-5 text-green-600" />}
-            </div>
-            <p className={`text-xs mt-1 ${isOverBudget ? 'text-red-600' : 'text-green-600'}`}>
-              {summary.variancePercentage}%
-            </p>
-          </div> */}
         </div>
 
 
@@ -347,6 +420,21 @@ export const ProjectDetailView: React.FC<{
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
+                  {/* Checkbox Column */}
+                  <th className="px-4 py-4 text-left">
+                    <input
+                      type="checkbox"
+                      checked={filteredTasks.length > 0 && selectedTasks.size === filteredTasks.length}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          handleSelectAll();
+                        } else {
+                          handleDeselectAll();
+                        }
+                      }}
+                      className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                    />
+                  </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Employee</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Task</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Description</th>
@@ -360,7 +448,23 @@ export const ProjectDetailView: React.FC<{
 
               <tbody className="divide-y divide-gray-200">
                 {filteredTasks.map((task) => (
-                  <tr key={task.taskId} className="hover:bg-gray-50">
+                  <tr 
+                    key={task.taskId} 
+                    className={`hover:bg-gray-50 transition-colors ${
+                      isTaskSelected(task.taskId) ? 'bg-blue-50' : ''
+                    }`}
+                  >
+                    {/* Checkbox Cell */}
+                    <td className="px-4 py-4">
+                      <input
+                        type="checkbox"
+                        checked={isTaskSelected(task.taskId)}
+                        onChange={() => handleToggleSelect(task.taskId)}
+                        className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </td>
+
                     <td className="px-6 py-4">
                       <div>
                         <p className="font-medium text-gray-900">{task.employeeName}</p>
