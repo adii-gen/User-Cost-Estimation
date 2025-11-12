@@ -235,7 +235,6 @@ export default function AdminDashboard() {
             isLoading={isLoadingDetails}
             onExport={handleExportProjectDetails}
             isExporting={isExporting}
-            userRole={userRole || undefined}
           />
         </div>
       </div>
