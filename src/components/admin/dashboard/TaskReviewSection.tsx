@@ -112,7 +112,7 @@ export const TaskReviewSection: React.FC<TaskReviewSectionProps> = ({
         throw new Error(data.error || 'Failed to submit review');
       }
 
-      alert('Review submitted successfully!');
+      // alert('Review submitted successfully!');
       setRating(0);
       setFeedback('');
       setShowForm(false);
@@ -148,7 +148,7 @@ export const TaskReviewSection: React.FC<TaskReviewSectionProps> = ({
         throw new Error(data.error || 'Failed to update review');
       }
 
-      alert('Review updated successfully!');
+      // alert('Review updated successfully!');
       setEditingReviewId(null);
       await fetchReviews();
     } catch (error) {
@@ -174,7 +174,7 @@ export const TaskReviewSection: React.FC<TaskReviewSectionProps> = ({
         throw new Error(data.error || 'Failed to delete review');
       }
 
-      alert('Review deleted successfully!');
+      // alert('Review deleted successfully!');
       await fetchReviews();
     } catch (error) {
       console.error('Error deleting review:', error);
@@ -218,7 +218,7 @@ export const TaskReviewSection: React.FC<TaskReviewSectionProps> = ({
         throw new Error(data.error || 'Failed to submit reply');
       }
 
-      alert('Reply submitted successfully!');
+      // alert('Reply submitted successfully!');
       setReplyText('');
       setReplyingToId(null);
       await fetchReviews();
