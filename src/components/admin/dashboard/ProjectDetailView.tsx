@@ -86,6 +86,7 @@ export const ProjectDetailView: React.FC<{
   const [editedTaskName, setEditedTaskName] = useState('');
   const [editedExpectedHours, setEditedExpectedHours] = useState('');
   const [editedStatus, setEditedStatus] = useState<'pending' | 'approved' | 'rejected'>('pending');
+  const [editedDate, setEditedDate] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
@@ -193,13 +194,16 @@ export const ProjectDetailView: React.FC<{
     setEditingTaskId(task.taskId);
     setEditedTaskName(task.taskName);
     setEditedExpectedHours(task.expectedHours);
-    setEditedStatus(task.status);
+    // ✅ Auto-approve if status is pending
+    setEditedStatus(task.status === 'pending' ? 'approved' : task.status);
+    setEditedDate(new Date(task.createdAt).toISOString().split('T')[0]);
   };
 
   const handleCancelEdit = () => {
     setEditingTaskId(null);
     setEditedTaskName('');
     setEditedExpectedHours('');
+    setEditedDate('');
   };
 
   const handleSaveEdit = async (taskId: string) => {
@@ -214,6 +218,21 @@ export const ProjectDetailView: React.FC<{
       return;
     }
 
+    if (!editedDate) {
+      alert('Please select a date');
+      return;
+    }
+
+    // ✅ Validate date is not in future
+    const selectedDate = new Date(editedDate);
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    
+    if (selectedDate > today) {
+      alert('Cannot select a future date');
+      return;
+    }
+
     setIsSaving(true);
 
     try {
@@ -224,6 +243,7 @@ export const ProjectDetailView: React.FC<{
           taskName: editedTaskName.trim(),
           expectedHours: expectedHoursNum,
           status: editedStatus,
+          createdAt: editedDate,
         }),
       });
 
@@ -240,6 +260,7 @@ export const ProjectDetailView: React.FC<{
                 taskName: editedTaskName,
                 expectedHours: editedExpectedHours,
                 status: editedStatus,
+                createdAt: editedDate,
                 updatedAt: new Date().toISOString(),
               }
             : t
@@ -254,6 +275,7 @@ export const ProjectDetailView: React.FC<{
                 taskName: editedTaskName,
                 expectedHours: editedExpectedHours,
                 status: editedStatus,
+                createdAt: editedDate,
                 updatedAt: new Date().toISOString(),
               }
             : t
@@ -264,6 +286,7 @@ export const ProjectDetailView: React.FC<{
       setEditedTaskName('');
       setEditedExpectedHours('');
       setEditedStatus('pending');
+      setEditedDate('');
 
     } catch (error) {
       console.error('Error updating task:', error);
@@ -531,12 +554,25 @@ export const ProjectDetailView: React.FC<{
                       )}
                     </td>
 
-                    <td className="px-6 py-4 text-sm text-gray-600">
-                      {new Date(task.createdAt).toLocaleDateString('en-IN', {
-                        day: '2-digit',
-                        month: 'short',
-                        year: 'numeric'
-                      })}
+                    <td className="px-6 py-4">
+                      {editingTaskId === task.taskId ? (
+                        <input
+                          type="date"
+                          value={editedDate}
+                          onChange={(e) => setEditedDate(e.target.value)}
+                          max={new Date().toISOString().split('T')[0]}
+                          className="px-2 py-1 border border-blue-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          disabled={isSaving}
+                        />
+                      ) : (
+                        <span className="text-sm text-gray-600">
+                          {new Date(task.createdAt).toLocaleDateString('en-IN', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric'
+                          })}
+                        </span>
+                      )}
                     </td>
 
                     <td className="px-6 py-4">
