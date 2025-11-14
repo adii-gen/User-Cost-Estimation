@@ -63,6 +63,16 @@ const styles = {
       left: { style: "thin", color: { rgb: "E2E8F0" } },
       right: { style: "thin", color: { rgb: "E2E8F0" } }
     }
+  },
+  dateCell: {
+    font: { sz: 10, color: { rgb: "000000" } },
+    alignment: { horizontal: "center", vertical: "center" },
+    border: {
+      top: { style: "thin", color: { rgb: "E2E8F0" } },
+      bottom: { style: "thin", color: { rgb: "E2E8F0" } },
+      left: { style: "thin", color: { rgb: "E2E8F0" } },
+      right: { style: "thin", color: { rgb: "E2E8F0" } }
+    }
   }
 };
 
@@ -153,6 +163,7 @@ export const formatProjectDetailsForExport = (projectDetails: any) => {
     { v: project.projectName, s: styles.projectHeader },
     { v: '', s: styles.projectHeader },
     { v: '', s: styles.projectHeader },
+    { v: '', s: styles.projectHeader },
     { v: '', s: styles.projectHeader }
   ]);
   
@@ -161,11 +172,13 @@ export const formatProjectDetailsForExport = (projectDetails: any) => {
     { v: project.description || 'No description', s: styles.projectDescription },
     { v: '', s: styles.projectDescription },
     { v: '', s: styles.projectDescription },
+    { v: '', s: styles.projectDescription },
     { v: '', s: styles.projectDescription }
   ]);
   
   // Row 3: Empty row for spacing
   ws_data.push([
+    { v: '', s: {} },
     { v: '', s: {} },
     { v: '', s: {} },
     { v: '', s: {} },
@@ -177,7 +190,8 @@ export const formatProjectDetailsForExport = (projectDetails: any) => {
     { v: 'Sr. No.', s: styles.columnHeader },
     { v: 'Task Name', s: styles.columnHeader },
     { v: 'Task Description', s: styles.columnHeader },
-    { v: 'Hours', s: styles.columnHeader }
+    { v: 'Hours', s: styles.columnHeader },
+    { v: 'Date', s: styles.columnHeader }
   ]);
   
   // Task Data Rows with alternating colors
@@ -192,7 +206,8 @@ export const formatProjectDetailsForExport = (projectDetails: any) => {
       { v: index + 1, s: styles.serialCell },
       { v: task.taskName, s: rowStyle },
       { v: task.description || 'No description', s: rowStyle },
-      { v: parseFloat(task.expectedHours).toFixed(2), s: styles.hoursCell }
+      { v: parseFloat(task.expectedHours).toFixed(2), s: styles.hoursCell },
+      { v: new Date(task.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }), s: styles.dateCell }
     ]);
   });
 
@@ -201,15 +216,16 @@ export const formatProjectDetailsForExport = (projectDetails: any) => {
   
   // Merge cells for project name and description
   if (!ws['!merges']) ws['!merges'] = [];
-  ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }); // Project name row
-  ws['!merges'].push({ s: { r: 1, c: 0 }, e: { r: 1, c: 3 } }); // Description row
+  ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }); // Project name row
+  ws['!merges'].push({ s: { r: 1, c: 0 }, e: { r: 1, c: 4 } }); // Description row
   
   // Set column widths
   ws['!cols'] = [
     { wch: 10 },  // Sr. No.
     { wch: 30 },  // Task Name
     { wch: 50 },  // Task Description
-    { wch: 15 }   // Expected Hours
+    { wch: 15 },  // Expected Hours
+    { wch: 15 }   // Date
   ];
   
   // Set row heights
@@ -235,7 +251,8 @@ export const formatProjectTasksForExport = (projectDetails: any) => {
     { v: 'Sr. No.', s: styles.columnHeader },
     { v: 'Task Name', s: styles.columnHeader },
     { v: 'Task Description', s: styles.columnHeader },
-    { v: 'Expected Hours', s: styles.columnHeader }
+    { v: 'Expected Hours', s: styles.columnHeader },
+    { v: 'Date', s: styles.columnHeader }
   ]);
   
   // Task data with alternating colors
@@ -250,7 +267,8 @@ export const formatProjectTasksForExport = (projectDetails: any) => {
       { v: index + 1, s: styles.serialCell },
       { v: task.taskName, s: rowStyle },
       { v: task.description || 'No description', s: rowStyle },
-      { v: parseFloat(task.expectedHours).toFixed(2), s: styles.hoursCell }
+      { v: parseFloat(task.expectedHours).toFixed(2), s: styles.hoursCell },
+      { v: new Date(task.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }), s: styles.dateCell }
     ]);
   });
 
@@ -260,7 +278,8 @@ export const formatProjectTasksForExport = (projectDetails: any) => {
     { wch: 10 },  // Sr. No.
     { wch: 30 },  // Task Name
     { wch: 50 },  // Task Description
-    { wch: 15 }   // Expected Hours
+    { wch: 15 },  // Expected Hours
+    { wch: 15 }   // Date
   ];
 
   return ws;
@@ -398,6 +417,7 @@ export const exportSelectedTasksDetailedToExcel = (
       { v: project.projectName, s: styles.projectHeader },
       { v: '', s: styles.projectHeader },
       { v: '', s: styles.projectHeader },
+      { v: '', s: styles.projectHeader },
       { v: '', s: styles.projectHeader }
     ]);
     
@@ -406,11 +426,13 @@ export const exportSelectedTasksDetailedToExcel = (
       { v: project.description || 'No description', s: styles.projectDescription },
       { v: '', s: styles.projectDescription },
       { v: '', s: styles.projectDescription },
+      { v: '', s: styles.projectDescription },
       { v: '', s: styles.projectDescription }
     ]);
     
     // Row 3: Empty row
     ws_data.push([
+      { v: '', s: {} },
       { v: '', s: {} },
       { v: '', s: {} },
       { v: '', s: {} },
@@ -422,7 +444,8 @@ export const exportSelectedTasksDetailedToExcel = (
       { v: 'Sr. No.', s: styles.columnHeader },
       { v: 'Task Name', s: styles.columnHeader },
       { v: 'Description', s: styles.columnHeader },
-      { v: 'Hours', s: styles.columnHeader }
+      { v: 'Hours', s: styles.columnHeader },
+      { v: 'Date', s: styles.columnHeader }
     ]);
     
     // Task Data Rows
@@ -437,7 +460,8 @@ export const exportSelectedTasksDetailedToExcel = (
         { v: index + 1, s: styles.serialCell },
         { v: task.taskName, s: rowStyle },
         { v: task.description || 'No description', s: rowStyle },
-        { v: parseFloat(task.expectedHours).toFixed(2), s: styles.hoursCell }
+        { v: parseFloat(task.expectedHours).toFixed(2), s: styles.hoursCell },
+        { v: new Date(task.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }), s: styles.dateCell }
       ]);
     });
 
@@ -445,15 +469,16 @@ export const exportSelectedTasksDetailedToExcel = (
     
     // Merge cells
     if (!ws['!merges']) ws['!merges'] = [];
-    ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }); // Project name
-    ws['!merges'].push({ s: { r: 1, c: 0 }, e: { r: 1, c: 3 } }); // Description
+    ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }); // Project name
+    ws['!merges'].push({ s: { r: 1, c: 0 }, e: { r: 1, c: 4 } }); // Description
     
     // Set column widths
     ws['!cols'] = [
       { wch: 10 },  // Sr. No.
       { wch: 30 },  // Task Name
       { wch: 50 },  // Description
-      { wch: 15 }   // Hours
+      { wch: 15 },  // Hours
+      { wch: 15 }   // Date
     ];
     
     // Set row heights
