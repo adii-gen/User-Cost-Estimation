@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { CheckCircle2, Clock, Edit2, Loader2, TrendingDown, TrendingUp, X, Trash2, CheckSquare, Square } from "lucide-react";
+import { CheckCircle2, Clock, Edit2, Loader2, TrendingDown, TrendingUp, X, Trash2, CheckSquare, Square, Star, MessageSquare } from "lucide-react";
 import DownloadButton from '@/components/DownloadButton';
 import SearchBox from '@/components/SearchBox';
 import Navigation from "@/components/pages/Navbar";
-import { exportSelectedTasksDetailedToExcel } from '@/utils/exportUtils';  // ✅ NEW IMPORT
-
+import { exportSelectedTasksDetailedToExcel } from '@/utils/exportUtils';
+import { TaskReviewSection } from "./TaskReviewSection";
 
 // ==================== TYPES ====================
 interface Project {
@@ -29,6 +29,21 @@ interface Task {
   employeeId: string;
   employeeName: string;
   employeeEmail: string;
+}
+
+interface Review {
+  id: string;
+  taskId: string;
+  reviewerId: string;
+  reviewerType: 'admin' | 'employee';
+  rating: number;
+  feedback: string | null;
+  reply: string | null;
+  repliedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  reviewerName: string;
+  reviewerEmail: string;
 }
 
 interface EmployeeSummary {
@@ -81,8 +96,11 @@ export const ProjectDetailView: React.FC<{
   const [employeeSearchTerm, setEmployeeSearchTerm] = useState('');
   const [filteredEmployees, setFilteredEmployees] = useState<EmployeeSummary[]>(employees);
 
-  // ==================== SELECTION STATE ====================
+  // Selection State
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
+
+  // ✅ Review State - only selectedTaskForReview needed
+  const [selectedTaskForReview, setSelectedTaskForReview] = useState<Task | null>(null);
 
   
   // Filter tasks based on search
@@ -142,13 +160,11 @@ export const ProjectDetailView: React.FC<{
     return selectedTasks.has(taskId);
   };
 
-  // ==================== ✅ UPDATED EXPORT HANDLER ====================
   const handleExportSelected = async () => {
     if (selectedTasks.size === 0) return;
     
     setIsExporting(true);
     try {
-      // ✅ Use new selective export function with detailed info
       exportSelectedTasksDetailedToExcel(
         projectDetails,
         selectedTasks,
@@ -162,6 +178,17 @@ export const ProjectDetailView: React.FC<{
   };
 
 
+  // ==================== REVIEW HANDLERS ====================
+  const handleOpenReviewSection = (task: Task) => {
+    setSelectedTaskForReview(task);
+  };
+
+  const handleCloseReviewSection = () => {
+    setSelectedTaskForReview(null);
+  };
+
+
+  // ==================== TASK HANDLERS ====================
   const handleEditClick = (task: Task) => {
     setEditingTaskId(task.taskId);
     setEditedTaskName(task.taskName);
@@ -175,7 +202,6 @@ export const ProjectDetailView: React.FC<{
     setEditedExpectedHours('');
   };
 
-  // ✅ Save task updates WITHOUT full page reload
   const handleSaveEdit = async (taskId: string) => {
     if (!editedTaskName.trim()) {
       alert('Task name cannot be empty');
@@ -206,7 +232,6 @@ export const ProjectDetailView: React.FC<{
         throw new Error(data.error || 'Failed to update task');
       }
 
-      // ✅ Locally update state
       setAllTasks(prev =>
         prev.map(t =>
           t.taskId === taskId
@@ -221,7 +246,6 @@ export const ProjectDetailView: React.FC<{
         )
       );
 
-      // ensure filtered list synced
       setFilteredTasks(prev =>
         prev.map(t =>
           t.taskId === taskId
@@ -250,7 +274,6 @@ export const ProjectDetailView: React.FC<{
   };
 
 
-  // ✅ Delete task WITHOUT full page reload
   const handleDeleteTask = async (taskId: string) => {
     if (!confirm('Are you sure you want to delete this task? This action cannot be undone.')) {
       return;
@@ -268,11 +291,9 @@ export const ProjectDetailView: React.FC<{
         throw new Error(data.error || 'Failed to delete task');
       }
 
-      // ✅ Remove from local state
       setAllTasks(prev => prev.filter(t => t.taskId !== taskId));
       setFilteredTasks(prev => prev.filter(t => t.taskId !== taskId));
       
-      // Remove from selection if selected
       setSelectedTasks(prev => {
         const newSet = new Set(prev);
         newSet.delete(taskId);
@@ -319,9 +340,10 @@ export const ProjectDetailView: React.FC<{
     );
   }
 
+  const isAdmin = false; // This will be determined by session in TaskReviewSection component
+
   return (
     <>
-      {/* <Navigation/> */}
       <div className="space-y-6">
 
         {/* Header */}
@@ -343,27 +365,7 @@ export const ProjectDetailView: React.FC<{
               />
             </div>
             
-            {/* Select/Deselect & Export Buttons */}
             <div className="flex gap-2">
-              {filteredTasks.length > 0 && (
-                <>
-                  {/* <button
-                    onClick={handleSelectAll}
-                    className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
-                  >
-                    <CheckSquare className="w-4 h-4" />
-                    Select All
-                  </button> */}
-                  {/* <button
-                    onClick={handleDeselectAll}
-                    className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
-                    disabled={selectedTasks.size === 0}
-                  >
-                    <Square className="w-4 h-4" />
-                    Deselect All
-                  </button> */}
-                </>
-              )}
               <DownloadButton
                 onDownload={handleExportSelected}
                 isLoading={isExporting}
@@ -375,7 +377,6 @@ export const ProjectDetailView: React.FC<{
             </div>
           </div>
 
-          {/* Selection Counter */}
           {filteredTasks.length > 0 && (
             <div className="mb-4 text-sm text-gray-600">
               {selectedTasks.size} of {filteredTasks.length} tasks selected for export
@@ -410,7 +411,7 @@ export const ProjectDetailView: React.FC<{
         </div>
 
 
-        {/* ==================  TASK TABLE  ================== */}
+        {/* TASK TABLE */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
           <div className="p-6 border-b border-gray-200">
             <h3 className="text-lg font-semibold text-gray-900">All Tasks</h3>
@@ -420,7 +421,6 @@ export const ProjectDetailView: React.FC<{
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  {/* Checkbox Column */}
                   <th className="px-4 py-4 text-left">
                     <input
                       type="checkbox"
@@ -454,7 +454,6 @@ export const ProjectDetailView: React.FC<{
                       isTaskSelected(task.taskId) ? 'bg-blue-50' : ''
                     }`}
                   >
-                    {/* Checkbox Cell */}
                     <td className="px-4 py-4">
                       <input
                         type="checkbox"
@@ -553,7 +552,7 @@ export const ProjectDetailView: React.FC<{
                             ) : (
                               <CheckCircle2 className="w-4 h-4" />
                             )}
-                            Confirm
+                            Save
                           </button>
 
                           <button
@@ -586,6 +585,15 @@ export const ProjectDetailView: React.FC<{
                             )}
                             Delete
                           </button>
+
+                          {/* ✅ Review Button - Anyone can view reviews */}
+                          <button
+                            onClick={() => handleOpenReviewSection(task)}
+                            className="text-purple-600 hover:text-purple-700 font-medium flex items-center gap-1"
+                          >
+                            <Star className="w-4 h-4" />
+                            Reviews
+                          </button>
                         </div>
                       )}
                     </td>
@@ -604,6 +612,34 @@ export const ProjectDetailView: React.FC<{
         </div>
 
       </div>
+
+      {/* ==================== REVIEW SECTION (Replaces Modal) ==================== */}
+      {selectedTaskForReview && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-gray-50 rounded-lg shadow-xl max-w-3xl w-full my-8">
+            <div className="p-4 bg-white border-b border-gray-200 sticky top-0 rounded-t-lg">
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-bold text-gray-900">Task Reviews</h2>
+                <button
+                  onClick={handleCloseReviewSection}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-4">
+              <TaskReviewSection
+                taskId={selectedTaskForReview.taskId}
+                taskName={selectedTaskForReview.taskName}
+                employeeName={selectedTaskForReview.employeeName}
+                employeeId={selectedTaskForReview.employeeId}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

@@ -79,7 +79,7 @@ export default function AdminDashboard() {
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [userRole, setUserRole] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | undefined>();
 
   useEffect(() => {
     checkUserRole();
@@ -241,6 +241,7 @@ export default function AdminDashboard() {
             projectDetails={projectDetails}
             onBack={handleBack}
             isLoading={isLoadingDetails}
+            // userRole={userRole}
           />
         </div>
       </div>
