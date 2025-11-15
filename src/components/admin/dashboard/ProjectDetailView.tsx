@@ -24,7 +24,7 @@ interface Task {
   expectedHours: string;
   actualHours: string;
   status: 'pending' | 'approved' | 'rejected';
-  approvedAt: string | null;
+  approvedAt: string ;
   createdAt: string;
   employeeId: string;
   employeeName: string;
@@ -554,7 +554,7 @@ export const ProjectDetailView: React.FC<{
                       )}
                     </td>
 
-                    <td className="px-6 py-4">
+                    {/* <td className="px-6 py-4">
                       {editingTaskId === task.taskId ? (
                         <input
                           type="date"
@@ -573,6 +573,15 @@ export const ProjectDetailView: React.FC<{
                           })}
                         </span>
                       )}
+
+                    </td> */}
+
+                    <td className="px-6 py-4"> 
+                        {new Date(task.approvedAt).toLocaleDateString('en-IN', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric'
+                          })}
                     </td>
 
                     <td className="px-6 py-4">

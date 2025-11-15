@@ -32,7 +32,7 @@ interface Task {
   expectedHours: string;
   actualHours: string;
   status: 'pending' | 'approved' | 'rejected';
-  approvedAt: string | null;
+  approvedAt: string;
   createdAt: string;
   employeeId: string;
   employeeName: string;
