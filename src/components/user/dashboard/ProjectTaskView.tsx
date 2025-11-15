@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from "react";
 import { Plus, Loader2, CheckCircle2, Clock, X, Star, StarOff } from "lucide-react";
+import { UserTaskReviewSection } from "./UserTaskReviewSection";
 
 interface Project {
   id: string;
@@ -165,6 +166,10 @@ export const ProjectTasksView: React.FC<{
     );
   }
 
+    const handleCloseReviews = () => {
+    setSelectedTaskForReview(null);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -313,18 +318,13 @@ export const ProjectTasksView: React.FC<{
       {/* Review Modal */}
       {selectedTaskForReview && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="max-w-2xl w-full my-8 bg-white rounded-lg p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold text-gray-900">Reviews for {selectedTaskForReview.taskName}</h3>
-              <button
-                onClick={() => setSelectedTaskForReview(null)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-            {/* Add your UserTaskReviewSection component here */}
-            <p className="text-gray-500">Review section will be displayed here</p>
+          <div className="max-w-2xl w-full my-8">
+            <UserTaskReviewSection
+              taskId={selectedTaskForReview.taskId}
+              taskName={selectedTaskForReview.taskName}
+              employeeId={selectedTaskForReview.employeeId}
+              onClose={handleCloseReviews}
+            />
           </div>
         </div>
       )}
